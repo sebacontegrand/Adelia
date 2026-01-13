@@ -119,13 +119,17 @@ function generateadeliaHtmlFileBased(params: {
                      + "font-family:Arial;font-size:11px;padding:3px;background-color:transparent;"
                      + "text-align:center;";
 
-    var openIconHTML = "[&nbsp;OPEN&nbsp;]";
-    var closeIconHTML= "[&nbsp;CLOSE&nbsp;]";
+
+var openIconHTML  = "&#9660;"; // ▼ arrow down (expand)
+var closeIconHTML = "&#9650;"; // ▲ arrow up (collapse)
 
     var setIconsTimeout = window.setTimeout(function() {
-        document.getElementById("dfpIconsContainer").innerHTML = "<div style='"+iconsStyle
-            + ";cursor:pointer;z-index:100' onclick='adelia.toggleAd()'><div id='dfpIconClose'>"
-            + closeIconHTML+"</div><div id='dfpIconOpen' style='display:none'>"+openIconHTML+"</div></div>";
+      document.getElementById("dfpIconsContainer").innerHTML =
+  "<div style='" + iconsStyle + ";z-index:100' onclick='adelia.toggleAd({track:true})'>" +
+    "<div id='dfpIconClose'>" + closeIconHTML + "</div>" +
+    "<div id='dfpIconOpen' style='display:none'>" + openIconHTML + "</div>" +
+  "</div>";
+
     },2000);
 
     adelia.expanded = (initExpanded=="true");
