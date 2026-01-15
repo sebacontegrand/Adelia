@@ -562,8 +562,9 @@ export function Puzzle300Builder() {
   }
 
   return (
-    <Card className="border-border bg-card p-8">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
+      <Card className="border-border bg-card p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label>Campana (nombre)</Label>
           <Input value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Ej: ACME_Q1_2026" />
@@ -689,13 +690,14 @@ export function Puzzle300Builder() {
         )}
         {status && <div className="rounded-md border bg-muted p-3 text-sm">{status}</div>}
 
-        <Button type="submit" className="w-full" size="lg" disabled={isWorking}>
-          <Download className="mr-2 h-4 w-4" />
-          {isWorking ? "Procesando..." : "Generar y descargar ZIP"}
-        </Button>
-      </form>
+          <Button type="submit" className="w-full" size="lg" disabled={isWorking}>
+            <Download className="mr-2 h-4 w-4" />
+            {isWorking ? "Procesando..." : "Generar y descargar ZIP"}
+          </Button>
+        </form>
+      </Card>
 
-      <div className="mt-8 space-y-3">
+      <Card className="border-border bg-card p-8 space-y-3">
         <Label>Preview (HTML)</Label>
         <div className="overflow-hidden rounded-md border">
           <iframe
@@ -710,7 +712,7 @@ export function Puzzle300Builder() {
           value={generatedHtml}
           readOnly
         />
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }

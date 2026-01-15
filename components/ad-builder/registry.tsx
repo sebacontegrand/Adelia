@@ -8,6 +8,7 @@ import { Puzzle300Builder } from "@/components/ad-builder/builders/puzzle-300-bu
 
 export type AdBuilderEntry = AdTypeOption & {
   Builder?: ComponentType
+  helperText?: string
 }
 
 export const adBuilderRegistry: AdBuilderEntry[] = [
@@ -18,6 +19,8 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "970x90, 970x250",
     status: "live",
     Builder: PushExpandableBuilder,
+    helperText:
+      "Subi las creatividades <strong>collapsed</strong> y <strong>expanded</strong> (de cualquier tamano). El builder genera automaticamente los PNG exactos de <strong>970x90</strong> y <strong>970x250</strong>, muestra una previsualizacion del recorte y exporta un ZIP con <strong>index.html</strong> + <strong>manifest</strong>.",
   },
   {
     id: "puzzle-300",
@@ -26,6 +29,8 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "300x250",
     status: "live",
     Builder: Puzzle300Builder,
+    helperText:
+      "Subi el <strong>background</strong> (archivo o URL) y el <strong>logo</strong>. Completa los textos y genera el ZIP con <strong>index.html</strong> + <strong>manifest</strong> + assets.",
   },
   {
     id: "GameAd",

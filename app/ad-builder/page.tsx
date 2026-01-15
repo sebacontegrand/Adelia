@@ -19,11 +19,14 @@ export default function AdBuilderPage() {
       <main className="container mx-auto px-4 py-12">
         <div className="mb-10 text-center">
           <h1 className="mb-3 text-4xl font-bold">Adelia Builder</h1>
-          <p className="mx-auto max-w-3xl text-muted-foreground">
-            Subi las creatividades <strong>collapsed</strong> y <strong>expanded</strong> (de cualquier tamano). El builder genera automaticamente
-            los PNG exactos de <strong>970x90</strong> y <strong>970x250</strong>, muestra una previsualizacion del recorte y exporta un ZIP con
-            <strong> index.html</strong> + <strong>manifest</strong>.
-          </p>
+          {selectedAdTypeEntry?.helperText ? (
+            <div className="mx-auto max-w-6xl">
+              <p
+                className="text-emerald-400"
+                dangerouslySetInnerHTML={{ __html: selectedAdTypeEntry.helperText }}
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="mb-12 space-y-6">
