@@ -46,6 +46,15 @@ async function downloadZip(zipName: string, files: { name: string; data: string 
   URL.revokeObjectURL(url)
 }
 
+async function fileToDataUrl(file: File): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 function buildPuzzleHtml(params: {
   brandLabel: string
   brandName: string
@@ -58,6 +67,7 @@ function buildPuzzleHtml(params: {
   winCtaUrl: string
   backgroundImage: string
   logoImage: string
+  accentColor: string
 }) {
   const safeBrandLabel = escapeHtmlAttr(params.brandLabel)
   const safeBrandName = escapeHtmlAttr(params.brandName)
@@ -71,6 +81,8 @@ function buildPuzzleHtml(params: {
 
   const safeBackgroundImage = escapeHtmlAttr(params.backgroundImage)
   const safeLogoImage = escapeHtmlAttr(params.logoImage)
+
+  const safeAccentColor = escapeHtmlAttr(params.accentColor)
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -93,7 +105,7 @@ function buildPuzzleHtml(params: {
   .top-bar {
     height: 40px;
     padding: 6px 10px;
-    background: #63A105;
+    background: ${safeAccentColor};
     display: flex;
     align-items: center;
     gap: 6px;
@@ -180,7 +192,7 @@ function buildPuzzleHtml(params: {
   }
 
   .tile.selected {
-    box-shadow: 0 0 0 2px #63A105;
+    box-shadow: 0 0 0 2px ${safeAccentColor};
     transform: scale(1.04);
   }
 
@@ -199,7 +211,7 @@ function buildPuzzleHtml(params: {
   .cta {
     display: inline-block;
     padding: 4px 10px;
-    background: #63A105;
+    background: ${safeAccentColor};
     border-radius: 999px;
     font-size: 11px;
     font-weight: 600;
@@ -249,7 +261,7 @@ function buildPuzzleHtml(params: {
   .win-cta {
     display: inline-block;
     padding: 4px 10px;
-    background: #63A105;
+    background: ${safeAccentColor};
     border-radius: 999px;
     font-size: 11px;
     font-weight: 600;
@@ -436,15 +448,19 @@ export function Puzzle300Builder() {
   const [winText, setWinText] = useState("Conoce mas sobre el nuevo 830 HP.")
   const [winCtaText, setWinCtaText] = useState("Ir al sitio")
   const [winCtaUrl, setWinCtaUrl] = useState("https://www.cronista.com")
+  const [accentColor, setAccentColor] = useState("rgba(99, 161, 5, 1)")
 
   const [backgroundSource, setBackgroundSource] = useState<SourceInfo | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState("")
   const [logoSource, setLogoSource] = useState<SourceInfo | null>(null)
+  const [previewBackgroundUrl, setPreviewBackgroundUrl] = useState("")
+  const [previewLogoUrl, setPreviewLogoUrl] = useState("")
 
   const [error, setError] = useState("")
   const [status, setStatus] = useState("")
   const [isWorking, setIsWorking] = useState(false)
   const [generatedHtml, setGeneratedHtml] = useState("")
+  const [previewHtml, setPreviewHtml] = useState("")
 
   const backgroundInputRef = useRef<HTMLInputElement | null>(null)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
@@ -462,19 +478,21 @@ export function Puzzle300Builder() {
     : ""
   const logoFileName = logoSource ? `${namingPrefix}__logo${getFileExtension(logoSource.file.name, ".png")}` : ""
 
-  const onBackgroundChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onBackgroundChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     e.target.value = ""
     if (!f) return
     setBackgroundSource({ file: f, bytes: f.size })
+    setPreviewBackgroundUrl(await fileToDataUrl(f))
     setStatus(`Background: ${f.name}`)
   }
 
-  const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     e.target.value = ""
     if (!f) return
     setLogoSource({ file: f, bytes: f.size })
+    setPreviewLogoUrl(await fileToDataUrl(f))
     setStatus(`Logo: ${f.name}`)
   }
 
@@ -511,9 +529,28 @@ export function Puzzle300Builder() {
         winCtaUrl,
         backgroundImage: backgroundImageRef,
         logoImage: logoImageRef,
+        accentColor,
       })
 
       setGeneratedHtml(html)
+
+      const previewBackground = backgroundSource ? previewBackgroundUrl : backgroundUrl.trim()
+      const previewLogo = previewLogoUrl || logoImageRef
+      const preview = buildPuzzleHtml({
+        brandLabel,
+        brandName,
+        headline,
+        ctaText,
+        ctaUrl,
+        winTitle,
+        winText,
+        winCtaText,
+        winCtaUrl,
+        backgroundImage: previewBackground,
+        logoImage: previewLogo,
+        accentColor,
+      })
+      setPreviewHtml(preview)
 
       const manifest = {
         format: "puzzle-300",
@@ -637,6 +674,11 @@ export function Puzzle300Builder() {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <Label>Color principal (RGBA)</Label>
+          <Input value={accentColor} onChange={(e) => setAccentColor(e.target.value)} placeholder="rgba(99, 161, 5, 1)" />
+        </div>
+
 
         <div className="space-y-2">
           <Label>Background (subi imagen)</Label>
@@ -704,7 +746,7 @@ export function Puzzle300Builder() {
             title="Puzzle preview"
             className="h-[260px] w-full bg-white"
             sandbox="allow-scripts allow-popups"
-            srcDoc={generatedHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
+            srcDoc={previewHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
           />
         </div>
         <textarea
