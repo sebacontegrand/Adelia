@@ -427,15 +427,15 @@ export function Puzzle300Builder() {
   const [campaign, setCampaign] = useState("")
   const [placement, setPlacement] = useState("")
 
-  const brandLabel = "Jhon Deere"
-  const brandName = "Arma el Nuevo 830HP"
-  const headline = "Hace clic en dos piezas para intercambiarlas."
-  const ctaText = "Ver mas >"
-  const ctaUrl = "https://www.cronista.com"
-  const winTitle = "Puzzle completo!"
-  const winText = "Conoce mas sobre el nuevo 830 HP."
-  const winCtaText = "Ir al sitio"
-  const winCtaUrl = "https://www.cronista.com"
+  const [brandLabel, setBrandLabel] = useState("Jhon Deere")
+  const [brandName, setBrandName] = useState("Arma el Nuevo 830HP")
+  const [headline, setHeadline] = useState("Hace clic en dos piezas para intercambiarlas.")
+  const [ctaText, setCtaText] = useState("Ver mas >")
+  const [ctaUrl, setCtaUrl] = useState("https://www.cronista.com")
+  const [winTitle, setWinTitle] = useState("Puzzle completo!")
+  const [winText, setWinText] = useState("Conoce mas sobre el nuevo 830 HP.")
+  const [winCtaText, setWinCtaText] = useState("Ir al sitio")
+  const [winCtaUrl, setWinCtaUrl] = useState("https://www.cronista.com")
 
   const [backgroundSource, setBackgroundSource] = useState<SourceInfo | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState("")
@@ -444,6 +444,7 @@ export function Puzzle300Builder() {
   const [error, setError] = useState("")
   const [status, setStatus] = useState("")
   const [isWorking, setIsWorking] = useState(false)
+  const [generatedHtml, setGeneratedHtml] = useState("")
 
   const backgroundInputRef = useRef<HTMLInputElement | null>(null)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
@@ -511,6 +512,8 @@ export function Puzzle300Builder() {
         backgroundImage: backgroundImageRef,
         logoImage: logoImageRef,
       })
+
+      setGeneratedHtml(html)
 
       const manifest = {
         format: "puzzle-300",
@@ -584,6 +587,55 @@ export function Puzzle300Builder() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Marca (label)</Label>
+            <Input value={brandLabel} onChange={(e) => setBrandLabel(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Marca (titulo)</Label>
+            <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Headline</Label>
+          <Input value={headline} onChange={(e) => setHeadline(e.target.value)} />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>CTA texto</Label>
+            <Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>CTA URL</Label>
+            <Input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://www.cronista.com" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Win titulo</Label>
+            <Input value={winTitle} onChange={(e) => setWinTitle(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Win texto</Label>
+            <Input value={winText} onChange={(e) => setWinText(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Win CTA texto</Label>
+            <Input value={winCtaText} onChange={(e) => setWinCtaText(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Win CTA URL</Label>
+            <Input value={winCtaUrl} onChange={(e) => setWinCtaUrl(e.target.value)} placeholder="https://www.cronista.com" />
+          </div>
+        </div>
+
 
         <div className="space-y-2">
           <Label>Background (subi imagen)</Label>
@@ -642,6 +694,23 @@ export function Puzzle300Builder() {
           {isWorking ? "Procesando..." : "Generar y descargar ZIP"}
         </Button>
       </form>
+
+      <div className="mt-8 space-y-3">
+        <Label>Preview (HTML)</Label>
+        <div className="overflow-hidden rounded-md border">
+          <iframe
+            title="Puzzle preview"
+            className="h-[260px] w-full bg-white"
+            sandbox="allow-scripts allow-popups"
+            srcDoc={generatedHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
+          />
+        </div>
+        <textarea
+          className="min-h-[180px] w-full rounded-md border bg-background p-3 font-mono text-xs"
+          value={generatedHtml}
+          readOnly
+        />
+      </div>
     </Card>
   )
 }
