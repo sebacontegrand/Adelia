@@ -18,7 +18,7 @@ export default function AdBuilderPage() {
 
       <main className="container mx-auto px-4 py-12">
         <div className="mb-10 text-center">
-          <h1 className="mb-3 text-4xl font-bold">Adelia Builder</h1>
+          <h1 className="mb-3 text-4xl font-bold">Justo Builder</h1>
           {selectedAdTypeEntry?.helperText ? (
             <div className="mx-auto max-w-6xl">
               <p
