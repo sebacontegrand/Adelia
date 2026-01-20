@@ -61,12 +61,16 @@ function buildColorAdHtml(params: {
   bwImage: string
   colorImage: string
   ctaUrl: string
+  brandLabel: string
+  brandName: string
 }) {
   const safeBackgroundColor = escapeHtmlAttr(params.backgroundColor)
   const safeLogoImage = escapeHtmlAttr(params.logoImage)
   const safeBwImage = escapeHtmlAttr(params.bwImage)
   const safeColorImage = escapeHtmlAttr(params.colorImage)
   const safeCtaUrl = escapeHtmlAttr(params.ctaUrl)
+  const safeBrandLabel = escapeHtmlAttr(params.brandLabel)
+  const safeBrandName = escapeHtmlAttr(params.brandName)
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -309,8 +313,8 @@ function buildColorAdHtml(params: {
          src="${safeLogoImage}"
          alt="Logo" />
     <div class="brand-texts">
-      <div class="brand-label">JHON DEERE</div>
-      <div class="brand-name">Serie 6E</div>
+      <div class="brand-label">${safeBrandLabel}</div>
+      <div class="brand-name">${safeBrandName}</div>
     </div>
   </div>
 
@@ -469,7 +473,9 @@ export function ColorAdBuilder() {
   const [campaign, setCampaign] = useState("")
   const [placement, setPlacement] = useState("")
   const [backgroundColor, setBackgroundColor] = useState("#63A105")
-  const [ctaUrl, setCtaUrl] = useState("https://www.tusitio.com")
+  const [ctaUrl, setCtaUrl] = useState("https://www.cronista.com")
+  const [brandLabel, setBrandLabel] = useState("JHON DEERE")
+  const [brandName, setBrandName] = useState("Serie 6E")
 
   const [logoSource, setLogoSource] = useState<SourceInfo | null>(null)
   const [bwSource, setBwSource] = useState<SourceInfo | null>(null)
@@ -547,6 +553,8 @@ export function ColorAdBuilder() {
         bwImage: bwFileName,
         colorImage: colorFileName,
         ctaUrl: ctaUrl.trim(),
+        brandLabel,
+        brandName,
       })
 
       setGeneratedHtml(html)
@@ -557,6 +565,8 @@ export function ColorAdBuilder() {
         bwImage: previewBwUrl || bwFileName,
         colorImage: previewColorUrl || colorFileName,
         ctaUrl: ctaUrl.trim(),
+        brandLabel,
+        brandName,
       })
       setPreviewHtml(preview)
 
@@ -640,6 +650,17 @@ export function ColorAdBuilder() {
           <div className="space-y-2">
             <Label>URL del sitio</Label>
             <Input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://www.tusitio.com" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Brand label</Label>
+              <Input value={brandLabel} onChange={(e) => setBrandLabel(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Brand name</Label>
+              <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+            </div>
           </div>
 
           <div className="space-y-2">
