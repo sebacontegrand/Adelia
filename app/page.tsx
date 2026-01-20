@@ -37,18 +37,23 @@ export default function HomePage() {
 
   if (!isAuthenticated && showIntro) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-white">
+      <div
+        className="relative min-h-screen cursor-pointer overflow-hidden bg-white"
+        onClick={handleVisitorContinue}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") handleVisitorContinue()
+        }}
+      >
         <img
           src="/screenfull.png"
           alt="Adelia"
           className="absolute inset-0 h-full w-full object-contain"
         />
         <div className="relative z-10 flex min-h-screen items-center justify-end px-8">
-          <div className="flex flex-col items-center gap-3">
-            <Button onClick={handleGoogleLogin} size="lg">
-              Login
-            </Button>
-       
+          <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 shadow">
+            Click para entrar
           </div>
         </div>
       </div>

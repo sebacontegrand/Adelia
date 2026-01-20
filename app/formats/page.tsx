@@ -126,7 +126,7 @@ const formatData = {
 }
 
 export default function FormatsPage() {
-  const [selectedFormat, setSelectedFormat] = useState<FormatType>(null)
+  const [selectedFormat, setSelectedFormat] = useState<FormatType>("desktop")
 
   return (
     <div className="min-h-screen">
