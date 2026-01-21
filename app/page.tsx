@@ -2,30 +2,28 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Navbar } from "@/components/navbar"
 
 export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === "authenticated"
+  const isLoading = status === "loading"
+
   const [showIntro, setShowIntro] = useState(false)
 
   const handleGoogleLogin = () => {
-    // Placeholder for Google OAuth
-    setIsAuthenticated(true)
-    window.localStorage.setItem("adelia_auth", "true")
-    window.localStorage.setItem("adelia_intro_seen", "true")
-    setShowIntro(false)
+    signIn("google")
   }
 
   const handleSignOut = () => {
-    setIsAuthenticated(false)
-    window.localStorage.removeItem("adelia_auth")
+    signOut()
   }
 
   useEffect(() => {
-    const storedAuth = window.localStorage.getItem("adelia_auth")
-    if (storedAuth === "true") setIsAuthenticated(true)
+    // Only check for intro seen, auth is handled by NextAuth
     const introSeen = window.localStorage.getItem("adelia_intro_seen")
     if (introSeen !== "true") setShowIntro(true)
   }, [])
@@ -35,6 +33,11 @@ export default function HomePage() {
     setShowIntro(false)
   }
 
+  if (isLoading) {
+    return null // Or a loading spinner
+  }
+
+  // Show intro only if not authenticated and intro not seen
   if (!isAuthenticated && showIntro) {
     return (
       <div
@@ -75,28 +78,28 @@ export default function HomePage() {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/formats" className="block h-full">
-            <h3 className="mb-2 text-2xl font-bold">Multiple Formats</h3>
-            <p className="text-muted-foreground">
-              Create ads for Desktop, Mobile, and Video platforms with our intuitive gallery system.
-            </p>
+              <h3 className="mb-2 text-2xl font-bold">Multiple Formats</h3>
+              <p className="text-muted-foreground">
+                Create ads for Desktop, Mobile, and Video platforms with our intuitive gallery system.
+              </p>
             </Link>
           </Card>
 
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/ad-builder" className="block h-full">
-            <h3 className="mb-2 text-2xl font-bold">Ad Builder</h3>
-            <p className="text-muted-foreground">
-              Design custom advertisements with our powerful form builder and instant preview.
-            </p>
+              <h3 className="mb-2 text-2xl font-bold">Ad Builder</h3>
+              <p className="text-muted-foreground">
+                Design custom advertisements with our powerful form builder and instant preview.
+              </p>
             </Link>
           </Card>
 
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/chat" className="block h-full">
-            <h3 className="mb-2 text-2xl font-bold">24/7 Support</h3>
-            <p className="text-muted-foreground">
-              Get instant help with our AI-powered chatbot for all your queries and questions.
-            </p>
+              <h3 className="mb-2 text-2xl font-bold">24/7 Support</h3>
+              <p className="text-muted-foreground">
+                Get instant help with our AI-powered chatbot for all your queries and questions.
+              </p>
             </Link>
           </Card>
         </div>

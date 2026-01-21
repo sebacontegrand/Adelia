@@ -2,15 +2,28 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type NavbarProps = {
+  // onSignOut is now optional/deprecated as Navbar handles it internally via NextAuth
   onSignOut?: () => void
   logoAction?: "home" | "signout"
 }
 
 export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
   const pathname = usePathname()
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === "authenticated"
+
+  const handleSignOut = () => {
+    if (onSignOut) {
+      onSignOut()
+    } else {
+      signOut()
+    }
+  }
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -22,8 +35,8 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white shadow-[0_14px_40px_rgba(0,0,0,0.55)]">
       <div className="container mx-auto flex h-28 items-center justify-between px-4">
-        {logoAction === "signout" && onSignOut ? (
-          <button type="button" onClick={onSignOut} className="flex items-center gap-2">
+        {logoAction === "signout" && isAuthenticated ? (
+          <button type="button" onClick={handleSignOut} className="flex items-center gap-2">
             <img
               src="/adelia%20(4).png"
               alt="Adelia"
@@ -45,19 +58,29 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                pathname === item.href ? "text-white" : "text-white/70"
-              }`}
+              className={`text-sm font-medium transition-colors hover:text-white ${pathname === item.href ? "text-white" : "text-white/70"
+                }`}
             >
               {item.label}
             </Link>
           ))}
         </div>
 
-        {onSignOut ? (
-          <Button variant="outline" size="sm" onClick={onSignOut}>
-            Sign Out
-          </Button>
+        {isAuthenticated ? (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
+                <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium hidden sm:inline-block">
+                {session?.user?.name}
+              </span>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
         ) : null}
       </div>
     </nav>

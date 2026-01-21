@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession, signIn, signOut } from "next-auth/react"
 
 import { AdTypeSelector } from "@/components/ad-type-selector"
 import { adBuilderRegistry } from "@/components/ad-builder/registry"
@@ -10,20 +11,28 @@ import { Card } from "@/components/ui/card"
 
 export default function AdBuilderPage() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === "authenticated"
+  const isLoading = status === "loading"
+
   const [selectedAdType, setSelectedAdType] = useState(adBuilderRegistry[0]?.id ?? "")
   const selectedAdTypeEntry = adBuilderRegistry.find((option) => option.id === selectedAdType)
   const BuilderComponent = selectedAdTypeEntry?.Builder
 
-  useEffect(() => {
-    const storedAuth = window.localStorage.getItem("adelia_auth")
-    if (storedAuth === "true") setIsAuthenticated(true)
-  }, [])
+  const handleSignIn = () => {
+    signIn("google")
+  }
 
   const handleSignOut = () => {
-    window.localStorage.removeItem("adelia_auth")
-    setIsAuthenticated(false)
-    router.push("/")
+    signOut({ callbackUrl: "/" })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {
@@ -40,7 +49,7 @@ export default function AdBuilderPage() {
               <button
                 type="button"
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
-                onClick={() => router.push("/")}
+                onClick={handleSignIn}
               >
                 Ir al login
               </button>

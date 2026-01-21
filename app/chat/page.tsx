@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession, signIn } from "next-auth/react"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -28,7 +28,10 @@ const botResponses = [
 
 export default function ChatPage() {
   const router = useRouter()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === "authenticated"
+  const isLoading = status === "loading"
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -48,10 +51,9 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages])
 
-  useEffect(() => {
-    const storedAuth = window.localStorage.getItem("adelia_auth")
-    if (storedAuth === "true") setIsAuthenticated(true)
-  }, [])
+  const handleSignIn = () => {
+    signIn("google")
+  }
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,6 +83,14 @@ export default function ChatPage() {
     }, 1000)
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
@@ -94,7 +104,7 @@ export default function ChatPage() {
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
-              onClick={() => router.push("/")}
+              onClick={handleSignIn}
             >
               Ir al login
             </button>
@@ -125,20 +135,18 @@ export default function ChatPage() {
                   className={`flex gap-3 ${message.sender === "user" ? "flex-row-reverse" : "flex-row"}`}
                 >
                   <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                      message.sender === "bot"
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${message.sender === "bot"
                         ? "bg-accent text-accent-foreground"
                         : "bg-primary text-primary-foreground"
-                    }`}
+                      }`}
                   >
                     {message.sender === "bot" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
                   <div
-                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                      message.sender === "bot"
+                    className={`max-w-[70%] rounded-lg px-4 py-2 ${message.sender === "bot"
                         ? "bg-secondary text-secondary-foreground"
                         : "bg-primary text-primary-foreground"
-                    }`}
+                      }`}
                   >
                     <p className="text-sm">{message.text}</p>
                     <p className="mt-1 text-xs opacity-70">
