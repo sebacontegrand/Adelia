@@ -54,25 +54,4 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     helperText:
       "Subi el <strong>logo</strong> y el <strong>audio</strong>, suma el background (URL) y textos editables. Exporta un ZIP con HTML, assets y manifest.",
   },
-  {
-    id: "GameAd",
-    title: "GameAd",
-    description: "Exporta creatividades estaticas con nombres y ZIP automaticos.",
-    dimensions: "300x250",
-    status: "live",
-  },
-  {
-    id: "leaderboard-728",
-    title: "Leaderboard 728x90",
-    description: "Builder rapido para banners estaticos con variantes.",
-    dimensions: "728x90",
-    status: "coming",
-  },
-  {
-    id: "mobile-320",
-    title: "Mobile 320x100",
-    description: "Recortes y empaquetado optimizados para mobile.",
-    dimensions: "320x100",
-    status: "coming",
-  },
 ]
