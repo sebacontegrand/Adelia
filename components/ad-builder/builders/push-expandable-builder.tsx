@@ -112,7 +112,7 @@ function generateadeliaHtmlFileBased(params: {
   <script>
     var adelia = { msgEvents: [], savedEvents:[] };
 
-    var clickTag = \"${safeClickTag}\";
+    // We keep these for internal logic (expand/collapse)
     var initExpanded = \"${params.initExpanded ? "true" : "false"}\";
     var autoClose = \"${Number(params.autoCloseSeconds)}\"*1;
     var collapseSeconds = \"${Number(params.collapseSeconds)}\";
@@ -201,11 +201,32 @@ var closeIconHTML = \"&#9650;\"; // up arrow (collapse)
     var params = {\"type\":\"image\",\"collapsedHeight\":\"${params.collapsedHeight}\",\"expandedHeight\":\"${params.expandedHeight}\",\"transition\":\"${Number(params.transitionMs)}\",\"impression_pixel\":\"\",\"activeview_pixel\":\"\",\"click_pixel\":\"\"};
     window.top.postMessage({ m:\"adelia\", a:\"print\", f:\"101\", n:\"18_1300\", p: params } , \"*\");
   </script>
+  
+  <script>
+    var urlParams = new URLSearchParams(window.location.search);
+    var clickTag = urlParams.get("clickTag") || "";
+
+    function exitClick(e) {
+      // Avoid redirecting when clicking controls (like expand/close buttons)
+      if (e.target.closest('#dfpIconsContainer')) return;
+    
+      var landing = "${safeClickTag}";
+
+      if (clickTag) {
+        window.open(clickTag + encodeURIComponent(landing), "_blank");
+      } else {
+        window.open(landing, "_blank");
+      }
+    }
+
+    document.addEventListener("click", exitClick);
+  </script>
 
   <div id='ad_container' style='position:relative; width:${params.width}px; height:${params.expandedHeight}px; overflow:hidden;'>
     <div id='dfpIconsContainer' style='position:absolute;left:0;top:0;width:62px;height:20px;z-index:100'></div>
 
-    <a href='javascript:void(0);' id='ad_click' onclick='window.open(clickTag);return false;'
+    <!-- Transparent click layer for cursor, but logic handled by document listener above -->
+    <a href='javascript:void(0);' id='ad_click'
       style='cursor:pointer;position:absolute;left:0;top:0;width:${params.width}px;height:${params.expandedHeight}px;display:${params.createClickLayer ? "block" : "none"};z-index:90'></a>
 
     <div id='ad_collapsed' style='display:${params.initExpanded ? "none" : "block"};'>
@@ -459,17 +480,22 @@ export function PushExpandableBuilder() {
       })
 
       // 6. Generate Embed Script
-      // This script creates an iframe pointing to the hosted HTML
+      // Appending query param logic for Firebase URLs (handling if ? exists)
+      // Firebase URLs usually have ?alt=... so we append &clickTag=
       const scriptCode = `<script>
 (function() {
   var d = document.createElement("div");
   d.id = "ad_container_${docId}";
   d.style.width = "970px";
-  d.style.height = "250px"; // Reserve expanded height or handle dynamic size
+  d.style.height = "250px"; 
   d.style.position = "relative";
+
+  var clickMacro = "%%CLICK_URL_UNESC%%";
+ 
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
   
   var f = document.createElement("iframe");
-  f.src = "${htmlUrl}";
+  f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
   f.width = "970";
   f.height = "250";
   f.style.border = "none";
