@@ -749,17 +749,6 @@ export function PushExpandableBuilder() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>HTML generado (inspeccion)</Label>
-            <textarea
-              className="min-h-[180px] w-full rounded-md border bg-background p-3 font-mono text-xs"
-              value={generatedHtml}
-              readOnly
-            />
-            <p className="text-xs text-muted-foreground">
-              El HTML referencia los nombres de los PNG dentro del ZIP. Para probarlo, descomprimi y servi la carpeta con un servidor local.
-            </p>
-          </div>
         </Card>
       </div>
     </div>
