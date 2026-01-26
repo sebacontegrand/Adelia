@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import JSZip from "jszip"
+import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -11,7 +12,10 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Download, Image as ImageIcon } from "lucide-react"
+import { Upload, Download, Image as ImageIcon, Save, Copy } from "lucide-react"
+
+import { uploadAdAsset } from "@/firebase/storage"
+import { saveAdRecord } from "@/firebase/firestore"
 
 type ExpandAction = "click" | "mouseover"
 
@@ -217,25 +221,19 @@ var closeIconHTML = \"&#9650;\"; // up arrow (collapse)
 </html>`
 }
 
-async function downloadZip(zipName: string, files: { name: string; data: string | Blob }[]) {
+async function createZipBlob(zipName: string, files: { name: string; data: string | Blob }[]) {
   const zip = new JSZip()
   for (const f of files) zip.file(f.name, f.data)
-
-  const blob = await zip.generateAsync({ type: "blob" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = zipName
-  a.click()
-  URL.revokeObjectURL(url)
+  return await zip.generateAsync({ type: "blob" })
 }
 
 export function PushExpandableBuilder() {
   const { toast } = useToast()
+  const { data: session } = useSession()
 
   // Naming
-  const [campaign, setCampaign] = useState("")
-  const [placement, setPlacement] = useState("")
+  const [campaign, setCampaign] = useState("My_Campaign")
+  const [placement, setPlacement] = useState("Push_Expandable_970x250")
 
   // Params
   const [autoCloseSeconds, setAutoCloseSeconds] = useState("8")
@@ -254,6 +252,9 @@ export function PushExpandableBuilder() {
 
   // Output HTML (inspect)
   const [generatedHtml, setGeneratedHtml] = useState("")
+
+  // Generated Embed Script
+  const [embedScript, setEmbedScript] = useState("")
 
   // Feedback
   const [error, setError] = useState("")
@@ -360,18 +361,35 @@ export function PushExpandableBuilder() {
 
     setError("")
     setStatus("")
+    setEmbedScript("")
 
     if (!collapsedSource || !expandedSource) {
       setError("You must upload both collapsed and expanded images.")
       return
     }
 
+    if (!session?.user?.email) {
+      setError("User authentication required.")
+      return
+    }
+    // We use email as ID for simplified pathing, ideally use uid
+    const userId = session.user.email
+
     try {
       setIsWorking(true)
 
+      // 1. Prepare Blobs
       const collapsedBlob = await autoCropCoverToPngBlob(collapsedSource.file, 970, 90)
       const expandedBlob = await autoCropCoverToPngBlob(expandedSource.file, 970, 250)
 
+      setStatus("Generating HTML & ZIP...")
+
+      // 2. Generate HTML
+      // Note: In a real hosted scenario, the HTML would reference cloud URLs, 
+      // but for standard Zip export we reference local files. 
+      // For the EMBED script, we might need a version that points to cloud assets 
+      // OR we serve the HTML itself from the cloud.
+      // Current logic: Standard Zip bundle.
       const html = generateadeliaHtmlFileBased({
         width: 970,
         collapsedHeight: 90,
@@ -386,75 +404,99 @@ export function PushExpandableBuilder() {
         collapsedFileNameInZip: collapsedNameInZip,
         expandedFileNameInZip: expandedNameInZip,
       })
-
       setGeneratedHtml(html)
 
+      // 3. Create ZIP
       const manifest = {
         format: "push-expandable",
         version: "1.0.0",
         generated_at: new Date().toISOString(),
-        naming: {
+        settings: {
           campaign,
           placement,
-          zip_name: zipName,
-          files: {
-            collapsed: collapsedNameInZip,
-            expanded: expandedNameInZip,
-          },
-        },
-        settings: {
-          auto_close_seconds: Number(autoCloseSeconds || 8),
-          expand_action: expandAction,
-          transition_ms: Number(transitionMs || 250),
-          create_click_layer: createClickLayer,
-          click_tag: clickTagUrl.trim(),
-        },
-        sources: [
-          {
-            role: "collapsed",
-            original_name: collapsedSource.file.name,
-            original_dimensions: { width: collapsedSource.w, height: collapsedSource.h },
-            original_mime: collapsedSource.mime,
-            original_bytes: collapsedSource.bytes,
-            output_file: collapsedNameInZip,
-            output_dimensions: { width: 970, height: 90 },
-            output_mime: "image/png",
-            crop_mode: "cover",
-          },
-          {
-            role: "expanded",
-            original_name: expandedSource.file.name,
-            original_dimensions: { width: expandedSource.w, height: expandedSource.h },
-            original_mime: expandedSource.mime,
-            original_bytes: expandedSource.bytes,
-            output_file: expandedNameInZip,
-            output_dimensions: { width: 970, height: 250 },
-            output_mime: "image/png",
-            crop_mode: "cover",
-          },
-        ],
-        files: ["index.html", collapsedNameInZip, expandedNameInZip, "manifest.json"],
+          click_tag: clickTagUrl,
+        }
       }
 
-      setStatus("Building ZIP...")
-
-      await downloadZip(zipName, [
+      const zipBlob = await createZipBlob(zipName, [
         { name: "index.html", data: html },
         { name: collapsedNameInZip, data: collapsedBlob },
         { name: expandedNameInZip, data: expandedBlob },
         { name: "manifest.json", data: JSON.stringify(manifest, null, 2) },
       ])
 
-      setStatus(`ZIP downloaded: ${zipName}`)
-      toast({ title: "ZIP generated", description: zipName })
+
+      // 4. Upload to Firebase
+      setStatus("Uploading assets to cloud...")
+
+      // Upload Images
+      const collapsedUrl = await uploadAdAsset(collapsedBlob, { userId, campaign, fileName: collapsedNameInZip })
+      const expandedUrl = await uploadAdAsset(expandedBlob, { userId, campaign, fileName: expandedNameInZip })
+
+      // Upload Zip
+      const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
+
+      // Upload HTML (for embedding directly)
+      // We upload index.html so it can be served/iframe'd
+      const htmlBlob = new Blob([html], { type: "text/html" });
+      const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" });
+
+
+      // 5. Save Record
+      setStatus("Saving database record...")
+      const docId = await saveAdRecord({
+        userId,
+        campaign,
+        placement,
+        type: "push-expandable",
+        zipUrl,
+        assets: {
+          collapsed: collapsedUrl,
+          expanded: expandedUrl
+        },
+        htmlUrl,
+        settings: manifest.settings
+      })
+
+      // 6. Generate Embed Script
+      // This script creates an iframe pointing to the hosted HTML
+      const scriptCode = `<script>
+(function() {
+  var d = document.createElement("div");
+  d.id = "ad_container_${docId}";
+  d.style.width = "970px";
+  d.style.height = "250px"; // Reserve expanded height or handle dynamic size
+  d.style.position = "relative";
+  
+  var f = document.createElement("iframe");
+  f.src = "${htmlUrl}";
+  f.width = "970";
+  f.height = "250";
+  f.style.border = "none";
+  f.scrolling = "no";
+  
+  d.appendChild(f);
+  document.currentScript.parentNode.insertBefore(d, document.currentScript);
+})();
+</script>`
+      setEmbedScript(scriptCode)
+
+      setStatus("Complete!")
+      toast({ title: "Ad Saved!", description: "Assets uploaded and record created." })
+
     } catch (err: any) {
       console.error(err)
-      setError(err?.message ?? "Error generating ZIP.")
+      setError(err?.message ?? "Error generating ad.")
       setStatus("")
-      toast({ title: "Error", description: err?.message ?? "Error generating ZIP.", variant: "destructive" })
+      toast({ title: "Error", description: err?.message, variant: "destructive" })
     } finally {
       setIsWorking(false)
     }
+  }
+
+  const handleCopyScript = () => {
+    navigator.clipboard.writeText(embedScript)
+    toast({ title: "Copied!", description: "Embed script copied to clipboard." })
   }
 
   return (
@@ -572,6 +614,7 @@ export function PushExpandableBuilder() {
             )}
           </div>
 
+          {/* Uploads */}
           <div className="space-y-2">
             <Label>Fuente Expanded (cualquier tamano) - salida 970x250</Label>
             <input
@@ -607,69 +650,92 @@ export function PushExpandableBuilder() {
           {status && <div className="rounded-md border bg-muted p-3 text-sm">{status}</div>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isWorking}>
-            <Download className="mr-2 h-4 w-4" />
-            {isWorking ? "Procesando..." : "Generar y descargar ZIP"}
+            <Save className="mr-2 h-4 w-4" />
+            {isWorking ? "Procesando..." : "Generate and Save to Cloud"}
           </Button>
         </form>
       </Card>
 
       {/* PREVIEW */}
-      <Card className="border-border bg-card p-8 space-y-6">
-        <div className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          <h2 className="text-2xl font-bold">Previsualizacion del recorte</h2>
-        </div>
+      <div className="space-y-6">
 
-        {/* Collapsed preview */}
-        <div className="space-y-2">
-          <Label>Salida Collapsed (970x90)</Label>
-          <div className="rounded-lg border bg-secondary/20 p-3">
-            {collapsedPreviewUrl ? (
-              <img
-                src={collapsedPreviewUrl}
-                alt="Previsualizacion collapsed"
-                className="block w-full rounded-md"
-                style={{ maxWidth: 970 }}
-              />
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Subi una fuente collapsed para ver la previsualizacion del recorte.
-              </div>
-            )}
+        {/* Embed Script Output */}
+        {embedScript && (
+          <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-emerald-500">Ad Ready!</h3>
+              <Button variant="ghost" size="sm" onClick={handleCopyScript}>
+                <Copy className="h-4 w-4 mr-2" /> Copy Script
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Copy and paste this script into your website to embed the ad.
+            </p>
+            <textarea
+              className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-background focus:ring-2 focus:ring-emerald-500"
+              readOnly
+              value={embedScript}
+            />
+          </Card>
+        )}
+
+        <Card className="border-border bg-card p-8 space-y-6">
+          <div className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            <h2 className="text-2xl font-bold">Previsualizacion del recorte</h2>
           </div>
-        </div>
 
-        {/* Expanded preview */}
-        <div className="space-y-2">
-          <Label>Salida Expanded (970x250)</Label>
-          <div className="rounded-lg border bg-secondary/20 p-3">
-            {expandedPreviewUrl ? (
-              <img
-                src={expandedPreviewUrl}
-                alt="Previsualizacion expanded"
-                className="block w-full rounded-md"
-                style={{ maxWidth: 970 }}
-              />
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Subi una fuente expanded para ver la previsualizacion del recorte.
-              </div>
-            )}
+          {/* Collapsed preview */}
+          <div className="space-y-2">
+            <Label>Salida Collapsed (970x90)</Label>
+            <div className="rounded-lg border bg-secondary/20 p-3">
+              {collapsedPreviewUrl ? (
+                <img
+                  src={collapsedPreviewUrl}
+                  alt="Previsualizacion collapsed"
+                  className="block w-full rounded-md"
+                  style={{ maxWidth: 970 }}
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Subi una fuente collapsed para ver la previsualizacion del recorte.
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label>HTML generado (inspeccion)</Label>
-          <textarea
-            className="min-h-[180px] w-full rounded-md border bg-background p-3 font-mono text-xs"
-            value={generatedHtml}
-            readOnly
-          />
-          <p className="text-xs text-muted-foreground">
-            El HTML referencia los nombres de los PNG dentro del ZIP. Para probarlo, descomprimi y servi la carpeta con un servidor local.
-          </p>
-        </div>
-      </Card>
+          {/* Expanded preview */}
+          <div className="space-y-2">
+            <Label>Salida Expanded (970x250)</Label>
+            <div className="rounded-lg border bg-secondary/20 p-3">
+              {expandedPreviewUrl ? (
+                <img
+                  src={expandedPreviewUrl}
+                  alt="Previsualizacion expanded"
+                  className="block w-full rounded-md"
+                  style={{ maxWidth: 970 }}
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Subi una fuente expanded para ver la previsualizacion del recorte.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>HTML generado (inspeccion)</Label>
+            <textarea
+              className="min-h-[180px] w-full rounded-md border bg-background p-3 font-mono text-xs"
+              value={generatedHtml}
+              readOnly
+            />
+            <p className="text-xs text-muted-foreground">
+              El HTML referencia los nombres de los PNG dentro del ZIP. Para probarlo, descomprimi y servi la carpeta con un servidor local.
+            </p>
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }
