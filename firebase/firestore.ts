@@ -1,5 +1,5 @@
 
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, deleteDoc, doc } from "firebase/firestore";
 import { db } from "./firebase.config";
 
 export type AdRecord = {
@@ -8,12 +8,10 @@ export type AdRecord = {
     placement: string;
     type: string; // e.g., 'push-expandable'
     zipUrl: string;
-    assets: {
-        collapsed: string;
-        expanded: string;
-    };
+    assets: Record<string, string>;
     htmlUrl?: string; // If we upload the index.html separately for direct embedding
     settings: any;
+    createdAt?: any;
 };
 
 export async function saveAdRecord(adData: AdRecord) {
@@ -29,3 +27,40 @@ export async function saveAdRecord(adData: AdRecord) {
         throw e;
     }
 }
+
+export async function getUserAds(userId: string) {
+    try {
+        const q = query(
+            collection(db, "ads"),
+            where("userId", "==", userId)
+        );
+        const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        })) as (AdRecord & { id: string })[];
+
+        // Sort client-side to avoid needing a composite index immediately
+        return docs.sort((a, b) => {
+            const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return tB - tA;
+        });
+    } catch (e) {
+        console.error("Error fetching user ads: ", e);
+        return [];
+    }
+
+}
+
+export async function deleteAdRecord(adId: string) {
+    try {
+        await deleteDoc(doc(db, "ads", adId));
+        return true;
+    } catch (e) {
+        console.error("Error deleting document: ", e);
+        throw e;
+    }
+}
+
+

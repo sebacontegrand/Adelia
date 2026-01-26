@@ -8,8 +8,10 @@ import { Puzzle300Builder } from "@/components/ad-builder/builders/puzzle-300-bu
 import { ColorAdBuilder } from "@/components/ad-builder/builders/colorad-builder"
 import { PodcastwithBuilder } from "@/components/ad-builder/builders/podcastwith-builder"
 
+import { type AdRecord } from "@/firebase/firestore"
+
 export type AdBuilderEntry = AdTypeOption & {
-  Builder?: ComponentType
+  Builder?: ComponentType<{ initialData?: AdRecord }>
   helperText?: string
 }
 

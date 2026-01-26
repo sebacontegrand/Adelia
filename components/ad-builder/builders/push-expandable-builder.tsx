@@ -248,28 +248,38 @@ async function createZipBlob(zipName: string, files: { name: string; data: strin
   return await zip.generateAsync({ type: "blob" })
 }
 
-export function PushExpandableBuilder() {
+import { type AdRecord } from "@/firebase/firestore"
+
+async function fetchAssetBlob(url: string): Promise<Blob> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error("Failed to fetch asset from URL")
+  return await response.blob()
+}
+
+export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord }) {
   const { toast } = useToast()
   const { data: session } = useSession()
 
   // Naming
-  const [campaign, setCampaign] = useState("My_Campaign")
-  const [placement, setPlacement] = useState("Push_Expandable_970x250")
+  const [campaign, setCampaign] = useState(initialData?.campaign ?? "My_Campaign")
+  const [placement, setPlacement] = useState(initialData?.placement ?? "Push_Expandable_970x250")
 
   // Params
-  const [autoCloseSeconds, setAutoCloseSeconds] = useState("8")
+  const [autoCloseSeconds, setAutoCloseSeconds] = useState(initialData?.settings?.autoClose ?? "8")
   const [createClickLayer, setCreateClickLayer] = useState(true)
-  const [clickTagUrl, setClickTagUrl] = useState("https://cronista.com")
+  const [clickTagUrl, setClickTagUrl] = useState(initialData?.settings?.click_tag ?? "https://cronista.com")
   const [transitionMs, setTransitionMs] = useState("250")
   const [expandAction, setExpandAction] = useState<ExpandAction>("click")
 
   // Sources (two uploads)
   const [collapsedSource, setCollapsedSource] = useState<SourceInfo | null>(null)
+  const [collapsedUrl, setCollapsedUrl] = useState(initialData?.assets?.collapsed ?? "")
   const [expandedSource, setExpandedSource] = useState<SourceInfo | null>(null)
+  const [expandedUrl, setExpandedUrl] = useState(initialData?.assets?.expanded ?? "")
 
   // Preview outputs (cropped)
-  const [collapsedPreviewUrl, setCollapsedPreviewUrl] = useState<string>("")
-  const [expandedPreviewUrl, setExpandedPreviewUrl] = useState<string>("")
+  const [collapsedPreviewUrl, setCollapsedPreviewUrl] = useState<string>(initialData?.assets?.collapsed ?? "")
+  const [expandedPreviewUrl, setExpandedPreviewUrl] = useState<string>(initialData?.assets?.expanded ?? "")
 
   // Output HTML (inspect)
   const [generatedHtml, setGeneratedHtml] = useState("")
@@ -384,8 +394,12 @@ export function PushExpandableBuilder() {
     setStatus("")
     setEmbedScript("")
 
-    if (!collapsedSource || !expandedSource) {
-      setError("You must upload both collapsed and expanded images.")
+    if (!collapsedSource && !collapsedUrl) {
+      setError("Missing collapsed image")
+      return
+    }
+    if (!expandedSource && !expandedUrl) {
+      setError("Missing expanded image")
       return
     }
 
@@ -393,25 +407,32 @@ export function PushExpandableBuilder() {
       setError("User authentication required.")
       return
     }
-    // We use email as ID for simplified pathing, ideally use uid
     const userId = session.user.email
 
     try {
       setIsWorking(true)
 
       // 1. Prepare Blobs
-      const collapsedBlob = await autoCropCoverToPngBlob(collapsedSource.file, 970, 90)
-      const expandedBlob = await autoCropCoverToPngBlob(expandedSource.file, 970, 250)
+      setStatus("Preparing assets...")
+      let collapsedBlob: Blob
+      if (collapsedSource) {
+        collapsedBlob = await autoCropCoverToPngBlob(collapsedSource.file, 970, 90)
+      } else {
+        collapsedBlob = await fetchAssetBlob(collapsedUrl)
+      }
+
+      let expandedBlob: Blob
+      if (expandedSource) {
+        expandedBlob = await autoCropCoverToPngBlob(expandedSource.file, 970, 250)
+      } else {
+        expandedBlob = await fetchAssetBlob(expandedUrl)
+      }
 
       setStatus("Generating HTML & ZIP...")
 
       // 2. Generate HTML
-      // Note: In a real hosted scenario, the HTML would reference cloud URLs, 
-      // but for standard Zip export we reference local files. 
-      // For the EMBED script, we might need a version that points to cloud assets 
-      // OR we serve the HTML itself from the cloud.
-      // Current logic: Standard Zip bundle.
-      const html = generateadeliaHtmlFileBased({
+      // Version A: For ZIP (Relative paths)
+      const htmlForZip = generateadeliaHtmlFileBased({
         width: 970,
         collapsedHeight: 90,
         expandedHeight: 250,
@@ -425,7 +446,17 @@ export function PushExpandableBuilder() {
         collapsedFileNameInZip: collapsedNameInZip,
         expandedFileNameInZip: expandedNameInZip,
       })
-      setGeneratedHtml(html)
+
+      // Version B: For Cloud/Preview (Absolute paths)
+      // When generating the "preview" HTML stored in Firebase, we want it to work standalone.
+      // So we must use the actual public URLs if available, OR we can't fully support it 
+      // until the files are uploaded. 
+      // But we upload files first! 
+      // So we need to re-generate the HTML after uploading assets to get their URLs?
+      // Actually `uploadAdAsset` returns the public download URL.
+      // So we can generate the "Cloud HTML" AFTER getting the image URLs.
+
+      setGeneratedHtml(htmlForZip) // Preview in inspection shows ZIP version usually, or we can show cloud version.
 
       // 3. Create ZIP
       const manifest = {
@@ -440,28 +471,45 @@ export function PushExpandableBuilder() {
       }
 
       const zipBlob = await createZipBlob(zipName, [
-        { name: "index.html", data: html },
+        { name: "index.html", data: htmlForZip },
         { name: collapsedNameInZip, data: collapsedBlob },
         { name: expandedNameInZip, data: expandedBlob },
         { name: "manifest.json", data: JSON.stringify(manifest, null, 2) },
       ])
 
-
       // 4. Upload to Firebase
       setStatus("Uploading assets to cloud...")
 
-      // Upload Images
-      const collapsedUrl = await uploadAdAsset(collapsedBlob, { userId, campaign, fileName: collapsedNameInZip })
-      const expandedUrl = await uploadAdAsset(expandedBlob, { userId, campaign, fileName: expandedNameInZip })
+      let newCollapsedUrl = collapsedUrl
+      if (collapsedSource) {
+        newCollapsedUrl = await uploadAdAsset(collapsedBlob, { userId, campaign, fileName: collapsedNameInZip })
+      }
 
-      // Upload Zip
+      let newExpandedUrl = expandedUrl
+      if (expandedSource) {
+        newExpandedUrl = await uploadAdAsset(expandedBlob, { userId, campaign, fileName: expandedNameInZip })
+      }
+
       const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
 
-      // Upload HTML (for embedding directly)
-      // We upload index.html so it can be served/iframe'd
-      const htmlBlob = new Blob([html], { type: "text/html" });
-      const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" });
+      // Generate Cloud HTML with Absolute URLs
+      const htmlForCloud = generateadeliaHtmlFileBased({
+        width: 970,
+        collapsedHeight: 90,
+        expandedHeight: 250,
+        clickTag: clickTagUrl.trim(),
+        initExpanded: false,
+        autoCloseSeconds: Number(autoCloseSeconds || 8),
+        collapseSeconds: 0,
+        expandAction,
+        transitionMs: Number(transitionMs || 250),
+        createClickLayer,
+        collapsedFileNameInZip: newCollapsedUrl, // Using Absolute URL!
+        expandedFileNameInZip: newExpandedUrl,   // Using Absolute URL!
+      })
 
+      const htmlBlob = new Blob([htmlForCloud], { type: "text/html" });
+      const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" });
 
       // 5. Save Record
       setStatus("Saving database record...")
@@ -472,16 +520,14 @@ export function PushExpandableBuilder() {
         type: "push-expandable",
         zipUrl,
         assets: {
-          collapsed: collapsedUrl,
-          expanded: expandedUrl
+          collapsed: newCollapsedUrl,
+          expanded: newExpandedUrl
         },
         htmlUrl,
         settings: manifest.settings
       })
 
       // 6. Generate Embed Script
-      // Appending query param logic for Firebase URLs (handling if ? exists)
-      // Firebase URLs usually have ?alt=... so we append &clickTag=
       const scriptCode = `<script>
 (function() {
   var d = document.createElement("div");

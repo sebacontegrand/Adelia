@@ -3,13 +3,17 @@
 import type React from "react"
 import { useMemo, useRef, useState } from "react"
 import JSZip from "jszip"
+import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Download, Upload } from "lucide-react"
+import { Download, Upload, Copy, Save } from "lucide-react"
+
+import { uploadAdAsset } from "@/firebase/storage"
+import { saveAdRecord } from "@/firebase/firestore"
 
 type SourceInfo = {
   file: File
@@ -33,17 +37,10 @@ function getFileExtension(fileName: string, fallback: string) {
   return dotIndex > 0 ? fileName.slice(dotIndex) : fallback
 }
 
-async function downloadZip(zipName: string, files: { name: string; data: string | Blob }[]) {
+async function createZipBlob(zipName: string, files: { name: string; data: string | Blob }[]) {
   const zip = new JSZip()
   for (const f of files) zip.file(f.name, f.data)
-
-  const blob = await zip.generateAsync({ type: "blob" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = zipName
-  a.click()
-  URL.revokeObjectURL(url)
+  return await zip.generateAsync({ type: "blob" })
 }
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -208,11 +205,25 @@ function buildPodcastWithHtml(params: {
     background: #63A105;
     border-radius: 999px;
     font-size: 11px;
-    font-weight: bold;
-    color: #fff;
+    color: #000;
     text-decoration: none;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
   }
 </style>
+<script>
+  var urlParams = new URLSearchParams(window.location.search);
+  var clickTag = urlParams.get("clickTag");
+
+  function exitClick(landingUrl) {
+    if (clickTag) {
+      window.open(clickTag + encodeURIComponent(landingUrl), "_blank");
+    } else {
+      window.open(landingUrl, "_blank");
+    }
+  }
+</script>
 </head>
 
 <body>
@@ -243,11 +254,9 @@ function buildPodcastWithHtml(params: {
       <div class="time" id="timeLabel">0:00</div>
     </div>
 
-    <a class="cta"
-       href="%%CLICK_URL_ESC%%${safeCtaUrl}"
-       target="_blank">
+    <button class="cta" onclick="exitClick('${safeCtaUrl}')">
       Ver más ›
-    </a>
+    </button>
   </div>
 
   <audio id="audio" preload="none">
@@ -312,18 +321,23 @@ function buildPodcastWithHtml(params: {
 </html>`
 }
 
-export function PodcastwithBuilder() {
-  const { toast } = useToast()
+import { type AdRecord } from "@/firebase/firestore"
 
-  const [campaign, setCampaign] = useState("")
-  const [placement, setPlacement] = useState("")
-  const [backgroundImageUrl, setBackgroundImageUrl] = useState("")
-  const [brandText, setBrandText] = useState("PRESENTADO POR Santander")
-  const [titleText, setTitleText] = useState("Episodio: ¿Como administrar los negocios?")
-  const [ctaUrl, setCtaUrl] = useState("https://www.tusitio.com")
+export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) {
+  const { toast } = useToast()
+  const { data: session } = useSession()
+
+  const [campaign, setCampaign] = useState(initialData?.campaign ?? "")
+  const [placement, setPlacement] = useState(initialData?.placement ?? "")
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState(initialData?.settings?.background_image ?? "")
+  const [brandText, setBrandText] = useState(initialData?.settings?.brandText ?? "PRESENTADO POR Santander")
+  const [titleText, setTitleText] = useState(initialData?.settings?.titleText ?? "Episodio: ¿Como administrar los negocios?")
+  const [ctaUrl, setCtaUrl] = useState(initialData?.settings?.cta_url ?? "https://www.tusitio.com")
 
   const [logoSource, setLogoSource] = useState<SourceInfo | null>(null)
+  const [logoUrl, setLogoUrl] = useState(initialData?.assets?.logo ?? "")
   const [audioSource, setAudioSource] = useState<SourceInfo | null>(null)
+  const [audioUrl, setAudioUrl] = useState(initialData?.assets?.audio ?? "")
 
   const [previewLogoUrl, setPreviewLogoUrl] = useState("")
   const [previewAudioUrl, setPreviewAudioUrl] = useState("")
@@ -333,6 +347,7 @@ export function PodcastwithBuilder() {
   const [isWorking, setIsWorking] = useState(false)
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [previewHtml, setPreviewHtml] = useState("")
+  const [embedScript, setEmbedScript] = useState("")
 
   const logoInputRef = useRef<HTMLInputElement | null>(null)
   const audioInputRef = useRef<HTMLInputElement | null>(null)
@@ -366,12 +381,18 @@ export function PodcastwithBuilder() {
     setStatus(`Audio: ${f.name}`)
   }
 
+  const handleCopyScript = () => {
+    navigator.clipboard.writeText(embedScript)
+    toast({ title: "Copied!", description: "Embed script copied to clipboard." })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setStatus("")
+    setEmbedScript("")
 
-    if (!logoSource || !audioSource) {
+    if ((!logoSource && !logoUrl) || (!audioSource && !audioUrl)) {
       setError("Subi logo y audio para continuar.")
       return
     }
@@ -381,16 +402,25 @@ export function PodcastwithBuilder() {
       return
     }
 
+    if (!session?.user?.email) {
+      setError("User authentication required.")
+      return
+    }
+    const userId = session.user.email
+
     try {
       setIsWorking(true)
 
+      const logoRef = logoSource ? logoFileName : logoUrl
+      const audioRef = audioSource ? audioFileName : audioUrl
+
       const html = buildPodcastWithHtml({
         backgroundImageUrl: backgroundImageUrl.trim(),
-        logoImage: logoFileName,
+        logoImage: logoRef,
         brandText,
         titleText,
         ctaUrl: ctaUrl.trim(),
-        audioSource: audioFileName,
+        audioSource: audioRef,
       })
 
       setGeneratedHtml(html)
@@ -428,15 +458,87 @@ export function PodcastwithBuilder() {
         },
       }
 
-      await downloadZip(zipName, [
+      const files: { name: string; data: string | Blob }[] = [
         { name: "index.html", data: html },
         { name: "manifest.json", data: JSON.stringify(manifest, null, 2) },
-        { name: logoFileName, data: logoSource.file },
-        { name: audioFileName, data: audioSource.file },
-      ])
+      ]
+      if (logoSource) files.push({ name: logoFileName, data: logoSource.file })
+      if (audioSource) files.push({ name: audioFileName, data: audioSource.file })
 
-      setStatus(`ZIP downloaded: ${zipName}`)
-      toast({ title: "ZIP generado", description: zipName })
+      const zipBlob = await createZipBlob(zipName, files)
+
+      // 4. Upload to Firebase
+      setStatus("Uploading assets to cloud...")
+
+      let uploadedLogoUrl = logoUrl
+      if (logoSource) {
+        uploadedLogoUrl = await uploadAdAsset(logoSource.file, { userId, campaign, fileName: logoFileName })
+      }
+
+      let uploadedAudioUrl = audioUrl
+      if (audioSource) {
+        uploadedAudioUrl = await uploadAdAsset(audioSource.file, { userId, campaign, fileName: audioFileName })
+      }
+
+      const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
+
+      // Generate Cloud HTML with Absolute URLs
+      const htmlForCloud = buildPodcastWithHtml({
+        backgroundImageUrl: backgroundImageUrl.trim(),
+        logoImage: uploadedLogoUrl,     // Absolute
+        brandText,
+        titleText,
+        ctaUrl: ctaUrl.trim(),
+        audioSource: uploadedAudioUrl,  // Absolute
+      })
+
+      const htmlBlob = new Blob([htmlForCloud], { type: "text/html" })
+      const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" })
+
+      // 5. Save Record
+      setStatus("Saving database record...")
+      const docId = await saveAdRecord({
+        userId,
+        campaign,
+        placement,
+        type: "podcastwith",
+        zipUrl,
+        assets: {
+          logo: uploadedLogoUrl,
+          audio: uploadedAudioUrl
+        },
+        htmlUrl,
+        settings: manifest.settings
+      })
+
+      // 6. Generate Embed Script
+      const scriptCode = `<script>
+(function() {
+  var d = document.createElement("div");
+  d.id = "ad_container_${docId}";
+  d.style.width = "300px";
+  d.style.height = "250px"; 
+  d.style.position = "relative";
+
+  var clickMacro = "%%CLICK_URL_UNESC%%";
+ 
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
+  
+  var f = document.createElement("iframe");
+  f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
+  f.width = "300";
+  f.height = "250";
+  f.style.border = "none";
+  f.scrolling = "no";
+  
+  d.appendChild(f);
+  document.currentScript.parentNode.insertBefore(d, document.currentScript);
+})();
+</script>`
+      setEmbedScript(scriptCode)
+
+      setStatus("Complete!")
+      toast({ title: "Ad Saved!", description: "Assets uploaded and record created." })
     } catch (err: any) {
       console.error(err)
       setError(err?.message ?? "Error generating ZIP.")
@@ -535,28 +637,45 @@ export function PodcastwithBuilder() {
           {status && <div className="rounded-md border bg-muted p-3 text-sm">{status}</div>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isWorking}>
-            <Download className="mr-2 h-4 w-4" />
-            {isWorking ? "Procesando..." : "Generar y descargar ZIP"}
+            <Save className="mr-2 h-4 w-4" />
+            {isWorking ? "Procesando..." : "Generate and Save to Cloud"}
           </Button>
         </form>
       </Card>
 
-      <Card className="border-border bg-card p-8 space-y-3">
-        <Label>Preview (HTML)</Label>
-        <div className="overflow-hidden rounded-md border">
-          <iframe
-            title="Podcastwith preview"
-            className="h-[260px] w-full bg-white"
-            sandbox="allow-scripts allow-popups"
-            srcDoc={previewHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
-          />
-        </div>
-        <textarea
-          className="min-h-[180px] w-full rounded-md border bg-background p-3 font-mono text-xs"
-          value={generatedHtml}
-          readOnly
-        />
-      </Card>
+      <div className="space-y-6">
+        {/* Embed Script Output */}
+        {embedScript && (
+          <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-emerald-500">Ad Ready!</h3>
+              <Button variant="ghost" size="sm" onClick={handleCopyScript}>
+                <Copy className="h-4 w-4 mr-2" /> Copy Script
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Copy and paste this script into your website to embed the ad.
+            </p>
+            <textarea
+              className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-background focus:ring-2 focus:ring-emerald-500"
+              readOnly
+              value={embedScript}
+            />
+          </Card>
+        )}
+
+        <Card className="border-border bg-card p-8 space-y-3">
+          <Label>Preview (HTML)</Label>
+          <div className="overflow-hidden rounded-md border">
+            <iframe
+              title="Podcastwith preview"
+              className="h-[260px] w-full bg-white"
+              sandbox="allow-scripts allow-popups"
+              srcDoc={previewHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
+            />
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }
