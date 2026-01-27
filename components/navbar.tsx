@@ -26,10 +26,15 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
     }
   }
 
+  // Admin Check for Navbar
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
+  const isAdmin = session?.user?.email && adminEmails.includes(session.user.email)
+
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/formats", label: "Formats" },
     { href: "/ad-builder", label: "Ad Builder" },
+    ...(isAdmin ? [{ href: "/media-kit-settings", label: "Media Kit" }] : []),
     { href: "/chat", label: "Adelia Assistant", icon: Sparkles },
   ]
 

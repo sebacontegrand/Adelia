@@ -7,6 +7,7 @@ import { PushExpandableBuilder } from "@/components/ad-builder/builders/push-exp
 import { Puzzle300Builder } from "@/components/ad-builder/builders/puzzle-300-builder"
 import { ColorAdBuilder } from "@/components/ad-builder/builders/colorad-builder"
 import { PodcastwithBuilder } from "@/components/ad-builder/builders/podcastwith-builder"
+import { NativeBuilder } from "@/components/ad-builder/builders/native-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -55,5 +56,15 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     Builder: PodcastwithBuilder,
     helperText:
       "Subi el <strong>logo</strong> y el <strong>audio</strong>, suma el background (URL) y textos editables. Exporta un ZIP con HTML, assets y manifest.",
+  },
+  {
+    id: "native-display",
+    title: "Native Display",
+    description: "Anuncio que se adapta al estilo del publisher. Imagen + Texto + CTA.",
+    dimensions: "Responsive",
+    status: "live",
+    Builder: NativeBuilder,
+    helperText:
+      "Completa el <strong>titulo</strong>, <strong>cuerpo</strong> e <strong>imagen</strong>. Este anuncio <strong>no usa Iframe</strong>, se inyecta directamente en la pagina para heredar las fuentes y estilos del sitio web.",
   },
 ]

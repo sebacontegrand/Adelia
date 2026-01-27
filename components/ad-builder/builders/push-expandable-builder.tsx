@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Upload, Download, Image as ImageIcon, Save, Copy } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord } from "@/firebase/firestore"
+import { saveAdRecord, getUserProfile } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
@@ -266,6 +266,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
   // Naming
   const [campaign, setCampaign] = useState(initialData?.campaign ?? "My_Campaign")
   const [placement, setPlacement] = useState(initialData?.placement ?? "Push_Expandable_970x250")
+  const [targetElementId, setTargetElementId] = useState(initialData?.settings?.targetElementId ?? "")
 
   // Params
   const [autoCloseSeconds, setAutoCloseSeconds] = useState(initialData?.settings?.autoClose ?? "8")
@@ -302,6 +303,18 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
 
   const collapsedInputRef = useRef<HTMLInputElement | null>(null)
   const expandedInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [availableSlots, setAvailableSlots] = useState<Array<{ id: string, name: string, format: string }>>([])
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      getUserProfile(session.user.email).then(profile => {
+        if (profile?.availableSlots) {
+          setAvailableSlots(profile.availableSlots)
+        }
+      })
+    }
+  }, [session])
 
   // Cleanup blob URLs to prevent memory leaks
   useEffect(() => {
@@ -474,6 +487,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
         settings: {
           campaign,
           placement,
+          targetElementId,
           click_tag: clickTagUrl,
           width: customWidth,
           height: customCollapsedHeight,
@@ -626,6 +640,32 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
               onChange={(e) => setPlacement(e.target.value)}
               placeholder="Ej: HP_970x250_expandable"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Target Slot (Optional)</Label>
+            {availableSlots.length > 0 ? (
+              <Select value={targetElementId} onValueChange={setTargetElementId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {availableSlots.map(slot => (
+                    <SelectItem key={slot.id} value={slot.id}>
+                      {slot.name} ({slot.format})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-muted-foreground border p-3 rounded-md">
+                No slots found. Configure them in <a href="/media-kit-settings" target="_blank" className="underline text-blue-400">Media Kit Settings</a>.
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Select the slot where this ad will appear.
+            </p>
           </div>
 
           <div className="rounded-md border p-3 text-sm">

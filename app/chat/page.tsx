@@ -167,7 +167,7 @@ export default function ChatPage() {
               <AlertCircle className="h-4 w-4 text-blue-500" />
               <AlertTitle className="text-blue-400 font-semibold">Restricted Access</AlertTitle>
               <AlertDescription className="text-blue-400/90 text-xs">
-                I can only answer questions about AdPress features, advertising concepts, and ad creation.
+                I can only answer questions about Adelia features, advertising concepts, and ad creation.
               </AlertDescription>
             </Alert>
 

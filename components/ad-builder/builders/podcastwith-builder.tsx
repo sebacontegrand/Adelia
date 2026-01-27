@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import JSZip from "jszip"
 import { useSession } from "next-auth/react"
 
@@ -13,10 +13,11 @@ import { useToast } from "@/hooks/use-toast"
 import { Download, Upload, Copy, Save } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord, getUserProfile } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type SourceInfo = {
   file: File
@@ -331,8 +332,21 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
   const { toast } = useToast()
   const { data: session } = useSession()
 
+  const [availableSlots, setAvailableSlots] = useState<Array<{ id: string, name: string, format: string }>>([])
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      getUserProfile(session.user.email).then(profile => {
+        if (profile?.availableSlots) {
+          setAvailableSlots(profile.availableSlots)
+        }
+      })
+    }
+  }, [session])
+
   const [campaign, setCampaign] = useState(initialData?.campaign ?? "")
   const [placement, setPlacement] = useState(initialData?.placement ?? "")
+  const [targetElementId, setTargetElementId] = useState(initialData?.settings?.targetElementId ?? "")
   const [backgroundImageUrl, setBackgroundImageUrl] = useState(initialData?.settings?.background_image ?? "")
   const [brandText, setBrandText] = useState(initialData?.settings?.brandText ?? "PRESENTADO POR Santander")
   const [titleText, setTitleText] = useState(initialData?.settings?.titleText ?? "Episodio: ¿Como administrar los negocios?")
@@ -464,7 +478,8 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
           background_image: backgroundImageUrl.trim(),
           cta_url: ctaUrl.trim(),
           width: customWidth,
-          height: customHeight
+          height: customHeight,
+          targetElementId
         },
         assets: {
           logo_upload: true,
@@ -585,8 +600,34 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
           </div>
 
           <div className="space-y-2">
-            <Label>Archivo ZIP (nombre / placement)</Label>
+            <Label>Nombre del anuncio</Label>
             <Input value={placement} onChange={(e) => setPlacement(e.target.value)} placeholder="Ej: POD_300x250" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Target Slot (Optional)</Label>
+            {availableSlots.length > 0 ? (
+              <Select value={targetElementId} onValueChange={setTargetElementId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {availableSlots.map(slot => (
+                    <SelectItem key={slot.id} value={slot.id}>
+                      {slot.name} ({slot.format})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-muted-foreground border p-3 rounded-md">
+                No slots found. Configure them in <a href="/media-kit-settings" target="_blank" className="underline text-blue-400">Media Kit Settings</a>.
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Select the slot where this ad will appear.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

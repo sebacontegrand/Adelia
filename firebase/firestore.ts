@@ -93,3 +93,62 @@ export async function getAdStats(adId: string, days = 7) {
         return [];
     }
 }
+
+// --- User Profiles (Media Kit) ---
+
+export type UserProfile = {
+    userId: string; // The specific email or unique ID
+    displayName: string;
+    bio: string;
+    logoUrl: string;
+    contactEmail: string;
+    trafficStats: {
+        monthlyViews: number;
+        audience: string;
+    };
+    availableSlots: Array<{
+        id: string;
+        name: string;
+        format: string;
+        price: number;
+        description?: string;
+    }>;
+    themeColor?: string;
+    updatedAt?: any;
+};
+
+export async function saveUserProfile(userId: string, data: Partial<UserProfile>) {
+    try {
+        await setDoc(doc(db, "profiles", userId), {
+            ...data,
+            userId, // Ensure ID is always set
+            updatedAt: serverTimestamp(),
+        }, { merge: true }); // Merge to allow partial updates
+        return true;
+    } catch (e) {
+        console.error("Error saving profile: ", e);
+        throw e;
+    }
+}
+
+export async function getUserProfile(userId: string) {
+    try {
+        const docRef = doc(db, "profiles", userId);
+        const docSnap = await getDocs(query(collection(db, "profiles"), where("userId", "==", userId)));
+        // Note: In Firestore, getting by ID via `getDoc` is better, but since userId is our key:
+        // Let's use getDoc directly if userId IS the document ID.
+        // My implementation above uses setDoc(doc(db, "profiles", userId)) so the document key IS the userId.
+
+        // Correct approach:
+        const d = await import("firebase/firestore").then(m => m.getDoc(docRef));
+
+        if (d.exists()) {
+            return d.data() as UserProfile;
+        } else {
+            return null;
+        }
+    } catch (e) {
+        console.error("Error fetching profile: ", e);
+        return null;
+    }
+}
