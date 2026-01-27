@@ -13,7 +13,10 @@ import { useToast } from "@/hooks/use-toast"
 import { Download, Upload, Copy, Save } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
+import { db } from "@/firebase/firebase.config"
+import { doc, collection } from "firebase/firestore"
+import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 
 type SourceInfo = {
   file: File
@@ -53,6 +56,8 @@ async function fileToDataUrl(file: File): Promise<string> {
 }
 
 function buildPuzzleHtml(params: {
+  width: number
+  height: number
   brandLabel: string
   brandName: string
   headline: string
@@ -92,8 +97,8 @@ function buildPuzzleHtml(params: {
 
   .banner {
     position: relative;
-    width: 300px;
-    height: 250px;
+    width: ${params.width}px;
+    height: ${params.height}px;
     background: #F1F3F5;
     color: #fff;
     overflow: hidden;
@@ -381,8 +386,8 @@ function buildPuzzleHtml(params: {
   function setTileBackground(tile, pieceIndex) {
     var col = pieceIndex % cols;
     var row = Math.floor(pieceIndex / cols);
-    var tileWidth = 240 / cols;
-    var tileHeight = 180 / rows;
+    var tileWidth = ${params.width} / cols; // 240 / 3 = 80
+    var tileHeight = (${params.height} - 70) / rows; // (250 - 70) / 3 = 60
     var x = -col * tileWidth;
     var y = -row * tileHeight;
     tile.style.backgroundPosition = x + 'px ' + y + 'px';
@@ -440,8 +445,6 @@ function buildPuzzleHtml(params: {
 </html>`
 }
 
-import { type AdRecord } from "@/firebase/firestore"
-
 async function fetchAssetBlob(url: string): Promise<Blob> {
   const response = await fetch(url)
   if (!response.ok) throw new Error("Failed to fetch asset from URL")
@@ -465,6 +468,10 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
   const [winCtaText, setWinCtaText] = useState(initialData?.settings?.winCtaText ?? "Ir al sitio")
   const [winCtaUrl, setWinCtaUrl] = useState(initialData?.settings?.win_cta_url ?? "https://www.cronista.com")
   const [accentColor, setAccentColor] = useState(initialData?.settings?.accentColor ?? "rgba(99, 161, 5, 1)")
+
+  // Dimensions
+  const [customWidth, setCustomWidth] = useState(initialData?.settings?.width ?? 300)
+  const [customHeight, setCustomHeight] = useState(initialData?.settings?.height ?? 250)
 
   const [backgroundSource, setBackgroundSource] = useState<SourceInfo | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState(initialData?.assets?.background ?? "")
@@ -549,6 +556,8 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
 
       // 1. Generate HTML
       const html = buildPuzzleHtml({
+        width: customWidth,
+        height: customHeight,
         brandLabel,
         brandName,
         headline,
@@ -569,6 +578,8 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
       const previewLogo = previewLogoUrl || logoImageRef
 
       const preview = buildPuzzleHtml({
+        width: customWidth,
+        height: customHeight,
         brandLabel,
         brandName,
         headline,
@@ -602,6 +613,8 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
         settings: {
           cta_url: ctaUrl,
           win_cta_url: winCtaUrl,
+          width: customWidth,
+          height: customHeight
         },
         assets: {
           background_upload: Boolean(backgroundSource),
@@ -659,8 +672,18 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
 
       const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
 
+      // 0. Generate ID early for Tracking
+      const newAdRef = doc(collection(db, "ads"));
+      const docId = newAdRef.id;
+      const trackingOrigin = window.location.origin;
+      const trackingCode = TRACKING_SCRIPT
+        .replace("[[AD_ID]]", docId)
+        .replace("[[TRACK_URL]]", `${trackingOrigin}/api/track`);
+
       // Generate Cloud HTML with Absolute URLs for "Ver HTML" feature
       const htmlForCloud = buildPuzzleHtml({
+        width: customWidth,
+        height: customHeight,
         brandLabel,
         brandName,
         headline,
@@ -675,12 +698,15 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
         accentColor,
       })
 
-      const htmlBlob = new Blob([htmlForCloud], { type: "text/html" })
+      // Inject Tracking
+      const htmlWithTracking = htmlForCloud.replace("</body>", `${trackingCode}\n</body>`);
+
+      const htmlBlob = new Blob([htmlWithTracking], { type: "text/html" })
       const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" })
 
       // 5. Save Record
       setStatus("Saving database record...")
-      const docId = await saveAdRecord({
+      await saveAdRecord({
         userId,
         campaign,
         placement,
@@ -692,15 +718,15 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
         },
         htmlUrl,
         settings: manifest.settings
-      })
+      }, docId)
 
       // 6. Generate Embed Script
       const scriptCode = `<script>
 (function() {
   var d = document.createElement("div");
   d.id = "ad_container_${docId}";
-  d.style.width = "300px";
-  d.style.height = "250px"; 
+  d.style.width = "${customWidth}px";
+  d.style.height = "${customHeight}px"; 
   d.style.position = "relative";
 
   var clickMacro = "%%CLICK_URL_UNESC%%";
@@ -709,8 +735,8 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
   
   var f = document.createElement("iframe");
   f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
-  f.width = "300";
-  f.height = "250";
+  f.width = "${customWidth}";
+  f.height = "${customHeight}";
   f.style.border = "none";
   f.scrolling = "no";
   
@@ -737,13 +763,32 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
       <Card className="border-border bg-card p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label>Campana (nombre)</Label>
+            <Label>Campaña(nombre)</Label>
             <Input value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Ej: ACME_Q1_2026" />
           </div>
 
           <div className="space-y-2">
-            <Label>Archivo ZIP (nombre / placement)</Label>
+            <Label>Nombre del anuncio</Label>
             <Input value={placement} onChange={(e) => setPlacement(e.target.value)} placeholder="Ej: HP_300x250_puzzle" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Ancho (px)</Label>
+              <Input
+                type="number"
+                value={customWidth}
+                onChange={(e) => setCustomWidth(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Alto (px)</Label>
+              <Input
+                type="number"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(Number(e.target.value))}
+              />
+            </div>
           </div>
 
           <div className="rounded-md border p-3 text-sm">
@@ -899,9 +944,9 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
           <div className="overflow-hidden rounded-md border">
             <iframe
               title="Puzzle preview"
-              className="h-[260px] w-full bg-white"
+              className="h-[260px] w-full bg-gray-600"
               sandbox="allow-scripts allow-popups"
-              srcDoc={previewHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
+              srcDoc={previewHtml || ""}
             />
           </div>
         </Card>

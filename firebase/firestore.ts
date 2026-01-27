@@ -1,5 +1,5 @@
 
-import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, deleteDoc, doc, setDoc } from "firebase/firestore";
 import { db } from "./firebase.config";
 
 export type AdRecord = {
@@ -14,14 +14,23 @@ export type AdRecord = {
     createdAt?: any;
 };
 
-export async function saveAdRecord(adData: AdRecord) {
+export async function saveAdRecord(adData: AdRecord, customId?: string) {
     try {
-        const docRef = await addDoc(collection(db, "ads"), {
-            ...adData,
-            createdAt: serverTimestamp(),
-        });
-        console.log("Document written with ID: ", docRef.id);
-        return docRef.id;
+        if (customId) {
+            await setDoc(doc(db, "ads", customId), {
+                ...adData,
+                createdAt: serverTimestamp(),
+            });
+            console.log("Document written with custom ID: ", customId);
+            return customId;
+        } else {
+            const docRef = await addDoc(collection(db, "ads"), {
+                ...adData,
+                createdAt: serverTimestamp(),
+            });
+            console.log("Document written with ID: ", docRef.id);
+            return docRef.id;
+        }
     } catch (e) {
         console.error("Error adding document: ", e);
         throw e;
@@ -64,3 +73,23 @@ export async function deleteAdRecord(adId: string) {
 }
 
 
+export async function getAdStats(adId: string, days = 7) {
+    try {
+        const statsRef = collection(db, "ads", adId, "daily_stats");
+        // Simple query: get all stats (in a real app, limit by date)
+        // For last 7 days, we could filter by ID (since ID is YYYY-MM-DD)
+        const q = query(statsRef, orderBy("__name__", "desc"));
+
+        const querySnapshot = await getDocs(q);
+        const stats = querySnapshot.docs.map(doc => ({
+            date: doc.id,
+            ...doc.data()
+        }));
+
+        // Return only requested days (client-side slice if needed or refine query)
+        return stats.slice(0, days).reverse();
+    } catch (e) {
+        console.error("Error fetching stats:", e);
+        return [];
+    }
+}

@@ -13,7 +13,10 @@ import { useToast } from "@/hooks/use-toast"
 import { Download, Upload, Copy, Save } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
+import { db } from "@/firebase/firebase.config"
+import { doc, collection } from "firebase/firestore"
+import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 
 type SourceInfo = {
   file: File
@@ -53,6 +56,8 @@ async function fileToDataUrl(file: File): Promise<string> {
 }
 
 function buildPodcastWithHtml(params: {
+  width: number
+  height: number
   backgroundImageUrl: string
   logoImage: string
   brandText: string
@@ -79,8 +84,8 @@ function buildPodcastWithHtml(params: {
 
   .banner {
     position: relative;
-    width: 300px;
-    height: 250px;
+    width: ${params.width}px;
+    height: ${params.height}px;
     overflow: hidden;
     background: #000;
     color: #fff;
@@ -321,7 +326,6 @@ function buildPodcastWithHtml(params: {
 </html>`
 }
 
-import { type AdRecord } from "@/firebase/firestore"
 
 export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) {
   const { toast } = useToast()
@@ -333,6 +337,10 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
   const [brandText, setBrandText] = useState(initialData?.settings?.brandText ?? "PRESENTADO POR Santander")
   const [titleText, setTitleText] = useState(initialData?.settings?.titleText ?? "Episodio: ¿Como administrar los negocios?")
   const [ctaUrl, setCtaUrl] = useState(initialData?.settings?.cta_url ?? "https://www.tusitio.com")
+
+  // Dimensions
+  const [customWidth, setCustomWidth] = useState(initialData?.settings?.width ?? 300)
+  const [customHeight, setCustomHeight] = useState(initialData?.settings?.height ?? 250)
 
   const [logoSource, setLogoSource] = useState<SourceInfo | null>(null)
   const [logoUrl, setLogoUrl] = useState(initialData?.assets?.logo ?? "")
@@ -415,6 +423,8 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
       const audioRef = audioSource ? audioFileName : audioUrl
 
       const html = buildPodcastWithHtml({
+        width: customWidth,
+        height: customHeight,
         backgroundImageUrl: backgroundImageUrl.trim(),
         logoImage: logoRef,
         brandText,
@@ -426,6 +436,8 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
       setGeneratedHtml(html)
 
       const preview = buildPodcastWithHtml({
+        width: customWidth,
+        height: customHeight,
         backgroundImageUrl: backgroundImageUrl.trim(),
         logoImage: previewLogoUrl || logoFileName,
         brandText,
@@ -451,6 +463,8 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
         settings: {
           background_image: backgroundImageUrl.trim(),
           cta_url: ctaUrl.trim(),
+          width: customWidth,
+          height: customHeight
         },
         assets: {
           logo_upload: true,
@@ -482,8 +496,18 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
 
       const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
 
+      // 0. Generate ID early for Tracking
+      const newAdRef = doc(collection(db, "ads"));
+      const docId = newAdRef.id;
+      const trackingOrigin = window.location.origin;
+      const trackingCode = TRACKING_SCRIPT
+        .replace("[[AD_ID]]", docId)
+        .replace("[[TRACK_URL]]", `${trackingOrigin}/api/track`);
+
       // Generate Cloud HTML with Absolute URLs
       const htmlForCloud = buildPodcastWithHtml({
+        width: customWidth,
+        height: customHeight,
         backgroundImageUrl: backgroundImageUrl.trim(),
         logoImage: uploadedLogoUrl,     // Absolute
         brandText,
@@ -492,12 +516,15 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
         audioSource: uploadedAudioUrl,  // Absolute
       })
 
-      const htmlBlob = new Blob([htmlForCloud], { type: "text/html" })
+      // Inject Tracking
+      const htmlWithTracking = htmlForCloud.replace("</body>", `${trackingCode}\n</body>`);
+
+      const htmlBlob = new Blob([htmlWithTracking], { type: "text/html" })
       const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" })
 
       // 5. Save Record
       setStatus("Saving database record...")
-      const docId = await saveAdRecord({
+      await saveAdRecord({
         userId,
         campaign,
         placement,
@@ -509,15 +536,15 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
         },
         htmlUrl,
         settings: manifest.settings
-      })
+      }, docId)
 
       // 6. Generate Embed Script
       const scriptCode = `<script>
 (function() {
   var d = document.createElement("div");
   d.id = "ad_container_${docId}";
-  d.style.width = "300px";
-  d.style.height = "250px"; 
+  d.style.width = "${customWidth}px";
+  d.style.height = "${customHeight}px"; 
   d.style.position = "relative";
 
   var clickMacro = "%%CLICK_URL_UNESC%%";
@@ -526,8 +553,8 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
   
   var f = document.createElement("iframe");
   f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
-  f.width = "300";
-  f.height = "250";
+  f.width = "${customWidth}";
+  f.height = "${customHeight}";
   f.style.border = "none";
   f.scrolling = "no";
   
@@ -560,6 +587,25 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
           <div className="space-y-2">
             <Label>Archivo ZIP (nombre / placement)</Label>
             <Input value={placement} onChange={(e) => setPlacement(e.target.value)} placeholder="Ej: POD_300x250" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Ancho (px)</Label>
+              <Input
+                type="number"
+                value={customWidth}
+                onChange={(e) => setCustomWidth(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Alto (px)</Label>
+              <Input
+                type="number"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(Number(e.target.value))}
+              />
+            </div>
           </div>
 
           <div className="rounded-md border p-3 text-sm">
@@ -669,9 +715,9 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
           <div className="overflow-hidden rounded-md border">
             <iframe
               title="Podcastwith preview"
-              className="h-[260px] w-full bg-white"
+              className="h-[260px] w-full bg-gray-600"
               sandbox="allow-scripts allow-popups"
-              srcDoc={previewHtml || "<html><body style='margin:0;font-family:system-ui'>Genera un ZIP para ver el preview.</body></html>"}
+              srcDoc={previewHtml || ""}
             />
           </div>
         </Card>

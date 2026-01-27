@@ -16,6 +16,9 @@ import { Upload, Download, Image as ImageIcon, Save, Copy } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
 import { saveAdRecord } from "@/firebase/firestore"
+import { db } from "@/firebase/firebase.config"
+import { doc, collection } from "firebase/firestore"
+import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 
 type ExpandAction = "click" | "mouseover"
 
@@ -271,6 +274,11 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
   const [transitionMs, setTransitionMs] = useState("250")
   const [expandAction, setExpandAction] = useState<ExpandAction>("click")
 
+  // Dimensions
+  const [customWidth, setCustomWidth] = useState(initialData?.settings?.width ?? 970)
+  const [customCollapsedHeight, setCustomCollapsedHeight] = useState(initialData?.settings?.height ?? 90)
+  const [customExpandedHeight, setCustomExpandedHeight] = useState(initialData?.settings?.expandedHeight ?? 250)
+
   // Sources (two uploads)
   const [collapsedSource, setCollapsedSource] = useState<SourceInfo | null>(null)
   const [collapsedUrl, setCollapsedUrl] = useState(initialData?.assets?.collapsed ?? "")
@@ -336,7 +344,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
 
     // Generate preview blob (cropped output)
     setStatus(`Auto-cropping ${kind}...`)
-    const target = kind === "collapsed" ? { w: 970, h: 90 } : { w: 970, h: 250 }
+    const target = kind === "collapsed" ? { w: customWidth, h: customCollapsedHeight } : { w: customWidth, h: customExpandedHeight }
     const outBlob = await autoCropCoverToPngBlob(file, target.w, target.h)
     const outUrl = URL.createObjectURL(outBlob)
 
@@ -416,14 +424,14 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
       setStatus("Preparing assets...")
       let collapsedBlob: Blob
       if (collapsedSource) {
-        collapsedBlob = await autoCropCoverToPngBlob(collapsedSource.file, 970, 90)
+        collapsedBlob = await autoCropCoverToPngBlob(collapsedSource.file, customWidth, customCollapsedHeight)
       } else {
         collapsedBlob = await fetchAssetBlob(collapsedUrl)
       }
 
       let expandedBlob: Blob
       if (expandedSource) {
-        expandedBlob = await autoCropCoverToPngBlob(expandedSource.file, 970, 250)
+        expandedBlob = await autoCropCoverToPngBlob(expandedSource.file, customWidth, customExpandedHeight)
       } else {
         expandedBlob = await fetchAssetBlob(expandedUrl)
       }
@@ -433,9 +441,9 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
       // 2. Generate HTML
       // Version A: For ZIP (Relative paths)
       const htmlForZip = generateadeliaHtmlFileBased({
-        width: 970,
-        collapsedHeight: 90,
-        expandedHeight: 250,
+        width: customWidth,
+        collapsedHeight: customCollapsedHeight,
+        expandedHeight: customExpandedHeight,
         clickTag: clickTagUrl.trim(),
         initExpanded: false,
         autoCloseSeconds: Number(autoCloseSeconds || 8),
@@ -467,6 +475,9 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
           campaign,
           placement,
           click_tag: clickTagUrl,
+          width: customWidth,
+          height: customCollapsedHeight,
+          expandedHeight: customExpandedHeight
         }
       }
 
@@ -477,7 +488,17 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
         { name: "manifest.json", data: JSON.stringify(manifest, null, 2) },
       ])
 
-      // 4. Upload to Firebase
+      // TRIGGER DOWNLOAD
+      const downloadUrl = URL.createObjectURL(zipBlob)
+      const link = document.createElement("a")
+      link.href = downloadUrl
+      link.download = zipName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(downloadUrl)
+
+      // 4. Upload to Firebase (Keep this for records, but primary action is now download)
       setStatus("Uploading assets to cloud...")
 
       let newCollapsedUrl = collapsedUrl
@@ -492,11 +513,20 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
 
       const zipUrl = await uploadAdAsset(zipBlob, { userId, campaign, fileName: zipName })
 
+      // 0. Generate ID early for Tracking
+      // We need a ref to get an Auto ID
+      const newAdRef = doc(collection(db, "ads"));
+      const docId = newAdRef.id;
+      const trackingOrigin = window.location.origin;
+      const trackingCode = TRACKING_SCRIPT
+        .replace("[[AD_ID]]", docId)
+        .replace("[[TRACK_URL]]", `${trackingOrigin}/api/track`);
+
       // Generate Cloud HTML with Absolute URLs
       const htmlForCloud = generateadeliaHtmlFileBased({
-        width: 970,
-        collapsedHeight: 90,
-        expandedHeight: 250,
+        width: customWidth,
+        collapsedHeight: customCollapsedHeight,
+        expandedHeight: customExpandedHeight,
         clickTag: clickTagUrl.trim(),
         initExpanded: false,
         autoCloseSeconds: Number(autoCloseSeconds || 8),
@@ -508,12 +538,15 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
         expandedFileNameInZip: newExpandedUrl,   // Using Absolute URL!
       })
 
-      const htmlBlob = new Blob([htmlForCloud], { type: "text/html" });
+      // Inject Tracking Script before </body>
+      const htmlWithTracking = htmlForCloud.replace("</body>", `${trackingCode}\n</body>`);
+
+      const htmlBlob = new Blob([htmlWithTracking], { type: "text/html" });
       const htmlUrl = await uploadAdAsset(htmlBlob, { userId, campaign, fileName: "index.html" });
 
-      // 5. Save Record
+      // 5. Save Record (using pre-generated ID)
       setStatus("Saving database record...")
-      const docId = await saveAdRecord({
+      await saveAdRecord({
         userId,
         campaign,
         placement,
@@ -525,25 +558,25 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
         },
         htmlUrl,
         settings: manifest.settings
-      })
+      }, docId)
 
       // 6. Generate Embed Script
       const scriptCode = `<script>
 (function() {
   var d = document.createElement("div");
   d.id = "ad_container_${docId}";
-  d.style.width = "970px";
-  d.style.height = "250px"; 
+  d.style.width = "${customWidth}px";
+  d.style.height = "${customExpandedHeight}px"; 
   d.style.position = "relative";
-
+  
   var clickMacro = "%%CLICK_URL_UNESC%%";
  
   var separator = "${htmlUrl}".includes("?") ? "&" : "?";
   
   var f = document.createElement("iframe");
   f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
-  f.width = "970";
-  f.height = "250";
+  f.width = "${customWidth}";
+  f.height = "${customExpandedHeight}";
   f.style.border = "none";
   f.scrolling = "no";
   
@@ -554,7 +587,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
       setEmbedScript(scriptCode)
 
       setStatus("Complete!")
-      toast({ title: "Ad Saved!", description: "Assets uploaded and record created." })
+      toast({ title: "Downloaded & Saved!", description: "ZIP downloaded and record saved to cloud." })
 
     } catch (err: any) {
       console.error(err)
@@ -578,7 +611,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Naming */}
           <div className="space-y-2">
-            <Label>Campana (nombre)</Label>
+            <Label>Campaña(nombre)</Label>
             <Input
               value={campaign}
               onChange={(e) => setCampaign(e.target.value)}
@@ -587,7 +620,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
           </div>
 
           <div className="space-y-2">
-            <Label>Archivo ZIP (nombre / placement)</Label>
+            <Label>Nombre del anuncio</Label>
             <Input
               value={placement}
               onChange={(e) => setPlacement(e.target.value)}
@@ -722,8 +755,8 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
           {status && <div className="rounded-md border bg-muted p-3 text-sm">{status}</div>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isWorking}>
-            <Save className="mr-2 h-4 w-4" />
-            {isWorking ? "Procesando..." : "Generate and Save to Cloud"}
+            <Download className="mr-2 h-4 w-4" />
+            {isWorking ? "Procesando..." : "Download ZIP & Save"}
           </Button>
         </form>
       </Card>

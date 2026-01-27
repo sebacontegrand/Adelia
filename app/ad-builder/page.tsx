@@ -25,7 +25,7 @@ export default function AdBuilderPage() {
   const [initialData, setInitialData] = useState<AdRecord | undefined>(undefined)
 
   // Builder selection
-  const [selectedAdType, setSelectedAdType] = useState(adBuilderRegistry[0]?.id ?? "")
+  const [selectedAdType, setSelectedAdType] = useState("")
   const selectedAdTypeEntry = adBuilderRegistry.find((option) => option.id === selectedAdType)
   const BuilderComponent = selectedAdTypeEntry?.Builder
 
@@ -33,6 +33,7 @@ export default function AdBuilderPage() {
   const handleCreateNew = () => {
     setInitialData(undefined)
     setViewMode("create")
+    setSelectedAdType("")
   }
 
   const handleLoadAd = (ad: AdRecord & { id: string }) => {
@@ -144,7 +145,12 @@ export default function AdBuilderPage() {
               <AdTypeSelector options={adBuilderRegistry} selectedId={selectedAdType} onSelect={(id) => { setSelectedAdType(id); setInitialData(undefined); }} />
             </div>
 
-            {BuilderComponent ? (
+            {!selectedAdType ? (
+              // No selection state
+              <div className="mx-auto max-w-2xl text-center p-8 text-muted-foreground">
+                <p>Selecciona un formato de la lista para comenzar a crear tu anuncio.</p>
+              </div>
+            ) : BuilderComponent ? (
               <BuilderComponent key={`${selectedAdType}-${(initialData as any)?.id || "new"}`} initialData={initialData} />
             ) : (
               <Card className="border-border bg-card p-8">

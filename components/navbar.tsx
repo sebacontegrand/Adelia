@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Sparkles } from "lucide-react"
 
 type NavbarProps = {
   // onSignOut is now optional/deprecated as Navbar handles it internally via NextAuth
@@ -29,7 +30,7 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
     { href: "/", label: "Home" },
     { href: "/formats", label: "Formats" },
     { href: "/ad-builder", label: "Ad Builder" },
-    { href: "/chat", label: "Chat" },
+    { href: "/chat", label: "Adelia Assistant", icon: Sparkles },
   ]
 
   return (
@@ -58,9 +59,10 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm font-medium transition-colors hover:text-white ${pathname === item.href ? "text-white" : "text-white/70"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-white ${pathname === item.href ? "text-white" : "text-white/70"
                 }`}
             >
+              {item.icon && <item.icon className="w-4 h-4 text-blue-400" />}
               {item.label}
             </Link>
           ))}
