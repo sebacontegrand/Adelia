@@ -12,6 +12,10 @@ export type AdRecord = {
     htmlUrl?: string; // If we upload the index.html separately for direct embedding
     settings: any;
     createdAt?: any;
+    // Financials
+    budget?: number;
+    cpm?: number;
+    status?: 'active' | 'paused' | 'completed';
 };
 
 export async function saveAdRecord(adData: AdRecord, customId?: string) {
@@ -60,6 +64,20 @@ export async function getUserAds(userId: string) {
         return [];
     }
 
+}
+
+export async function getAllAds() {
+    try {
+        const q = query(collection(db, "ads"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        })) as (AdRecord & { id: string })[];
+    } catch (e) {
+        console.error("Error fetching all ads: ", e);
+        return [];
+    }
 }
 
 export async function deleteAdRecord(adId: string) {
@@ -144,5 +162,15 @@ export async function getUserProfile(userId: string) {
     } catch (e) {
         console.error("Error fetching profile: ", e);
         return null;
+    }
+}
+
+export async function getAllProfiles() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "profiles"));
+        return querySnapshot.docs.map(doc => doc.data() as UserProfile);
+    } catch (e) {
+        console.error("Error fetching all profiles: ", e);
+        return [];
     }
 }

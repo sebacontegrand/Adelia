@@ -34,7 +34,10 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
     { href: "/", label: "Home" },
     { href: "/formats", label: "Formats" },
     { href: "/ad-builder", label: "Ad Builder" },
-    ...(isAdmin ? [{ href: "/media-kit-settings", label: "Media Kit" }] : []),
+    ...(isAdmin ? [
+      { href: "/media-kit-settings", label: "Media Kit" },
+      { href: "/admin", label: "Admin Dashboard" }
+    ] : []),
     { href: "/chat", label: "Adelia Assistant", icon: Sparkles },
   ]
 
