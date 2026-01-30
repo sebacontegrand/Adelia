@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, Plus, Trash2, ExternalLink } from "lucide-react"
+import { Loader2, Save, Plus, Trash2, ExternalLink, Copy } from "lucide-react"
 import { ImageUpload } from "@/components/ui/image-upload"
 import Link from "next/link"
 import { useLanguage } from "@/app/context/language-context"
@@ -122,6 +122,16 @@ export default function MediaKitSettingsPage() {
     }
 
     const publicUrl = session?.user?.email ? `/mk/${encodeURIComponent(session.user.email)}` : "#"
+    const fullPublicUrl = typeof window !== 'undefined' ? `${window.location.origin}${publicUrl}` : publicUrl
+
+    const handleCopyLink = () => {
+        if (!fullPublicUrl) return
+        navigator.clipboard.writeText(fullPublicUrl)
+        toast({
+            title: t("media_kit.link_copied"),
+            description: t("media_kit.share_tooltip"),
+        })
+    }
 
     return (
         <div className="min-h-screen bg-black">
@@ -134,6 +144,15 @@ export default function MediaKitSettingsPage() {
                         <p className="text-slate-400">{t("media_kit.subtitle")}</p>
                     </div>
                     <div className="flex gap-3">
+                        <Button
+                            variant="outline"
+                            className="border-white/10 text-white hover:bg-neutral-800 bg-transparent"
+                            onClick={handleCopyLink}
+                            title={t("media_kit.share_tooltip")}
+                        >
+                            <Copy className="mr-2 h-4 w-4" />
+                            {t("media_kit.copy_link")}
+                        </Button>
                         <Link href={publicUrl} target="_blank">
                             <Button variant="outline" className="border-white/10 text-white hover:bg-neutral-800 bg-transparent">
                                 <ExternalLink className="mr-2 h-4 w-4" />

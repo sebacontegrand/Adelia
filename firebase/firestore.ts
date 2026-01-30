@@ -10,6 +10,7 @@ export type AdRecord = {
     zipUrl: string;
     assets: Record<string, string>;
     htmlUrl?: string; // If we upload the index.html separately for direct embedding
+    targetUrl?: string; // The destination URL when clicked
     settings: any;
     createdAt?: any;
     // Financials

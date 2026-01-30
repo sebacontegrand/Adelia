@@ -21,7 +21,17 @@ import { getStorage } from "firebase/storage";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+let analytics;
+if (typeof window !== "undefined") {
+    try {
+        analytics = getAnalytics(app);
+    } catch (e) {
+        console.warn("Analytics initialization failed (likely API permissions):", e);
+        analytics = null;
+    }
+} else {
+    analytics = null;
+}
 
 const db = getFirestore(app);
 const storage = getStorage(app);

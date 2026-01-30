@@ -8,6 +8,7 @@ import { Puzzle300Builder } from "@/components/ad-builder/builders/puzzle-300-bu
 import { ColorAdBuilder } from "@/components/ad-builder/builders/colorad-builder"
 import { PodcastwithBuilder } from "@/components/ad-builder/builders/podcastwith-builder"
 import { NativeBuilder } from "@/components/ad-builder/builders/native-builder"
+import { ScratchAdBuilder } from "@/components/ad-builder/builders/scratch-ad-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -80,5 +81,17 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     Builder: NativeBuilder,
     helperText:
       "Completa el <strong>titulo</strong>, <strong>cuerpo</strong> e <strong>imagen</strong>. Este anuncio <strong>no usa Iframe</strong>, se inyecta directamente en la pagina para heredar las fuentes y estilos del sitio web.",
+  },
+  {
+    id: "scratch-off-300",
+    title: "Scratch-Off 300x250",
+    description: "Formato gamificado donde el usuario raspa para revelar un premio o mensaje.",
+    dimensions: "300x250",
+    status: "live",
+    category: "desktop", // Works on mobile too
+    image: "/desktop-medium-rectangle-ad.jpg", // Placeholder until we have a specific one
+    Builder: ScratchAdBuilder,
+    helperText:
+      "Subi la <strong>Cover Image</strong> (lo que se raspa) y la <strong>Back Image</strong> (lo que se revela). El usuario interactuara arrastrando el mouse o el dedo. Exporta un ZIP con HTML Canvas logic.",
   },
 ]

@@ -112,6 +112,9 @@ const translations = {
         "media_kit.saved_desc": "Your media kit has been updated.",
         "media_kit.access_denied": "Access Denied",
         "media_kit.access_denied_desc": "You are not authorized to edit Media Kit settings.",
+        "media_kit.copy_link": "Copy Link",
+        "media_kit.link_copied": "Link Copied",
+        "media_kit.share_tooltip": "Copy public link to clipboard",
 
         // Ad Builder
         "builder.require_login_title": "Ad Builder requires login",
@@ -125,7 +128,12 @@ const translations = {
         "builder.available_formats": "Available now: Push Expandable, Puzzle 300x250, ColorAd 300x250 and Podcastwith 300x250. More coming soon!",
         "builder.select_format_prompt": "Select a format from the list to start creating your ad.",
         "builder.coming_soon": "Builder coming soon",
-        "builder.coming_soon_desc": "The builder for this format is not available yet."
+        "builder.coming_soon_desc": "The builder for this format is not available yet.",
+        // Scratch Builder
+        "builder.campaign_name": "Campaign Name",
+        "builder.cover_image": "Cover Image (Scratch Layer)",
+        "builder.back_image": "Back Image (Hidden Layer)",
+        "builder.generate_download": "Generate & Download ZIP"
     },
     es: {
         "nav.home": "Inicio",
@@ -228,6 +236,9 @@ const translations = {
         "media_kit.saved_desc": "Tu media kit ha sido actualizado.",
         "media_kit.access_denied": "Acceso Denegado",
         "media_kit.access_denied_desc": "No estás autorizado para editar configuraciones de Media Kit.",
+        "media_kit.copy_link": "Copiar Link",
+        "media_kit.link_copied": "Link Copiado",
+        "media_kit.share_tooltip": "Copiar link público",
 
         // Ad Builder
         "builder.require_login_title": "Ad Builder requiere login",
@@ -241,7 +252,12 @@ const translations = {
         "builder.available_formats": "Disponible en este momento: Push Expandable, Puzzle 300x250, ColorAd 300x250 y Podcastwith 300x250. ¡Pronto más formatos!",
         "builder.select_format_prompt": "Selecciona un formato de la lista para comenzar a crear tu anuncio.",
         "builder.coming_soon": "Builder en camino",
-        "builder.coming_soon_desc": "Todavía no está disponible el builder para este formato."
+        "builder.coming_soon_desc": "Todavía no está disponible el builder para este formato.",
+        // Scratch Builder
+        "builder.campaign_name": "Nombre de Campaña",
+        "builder.cover_image": "Imagen de Cubierta (Capa para raspar)",
+        "builder.back_image": "Imagen de Fondo (Capa oculta)",
+        "builder.generate_download": "Generar y Descargar ZIP"
     }
 }
 

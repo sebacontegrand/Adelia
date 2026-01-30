@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { getUserProfileServer } from "@/lib/firebase-admin"
+import { getUserProfile } from "@/firebase/firestore"
 import { ContactModal } from "@/components/media-kit/contact-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const userId = decodeURIComponent(params.userId)
-    const profile = await getUserProfileServer(userId)
+    const profile = await getUserProfile(userId)
 
     return {
         title: profile?.displayName ? `${profile.displayName} - Media Kit` : "Media Kit | Adelia",
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicMediaKitPage({ params }: Props) {
     const userId = decodeURIComponent(params.userId)
-    const profile = await getUserProfileServer(userId)
+    const profile = await getUserProfile(userId)
 
     if (!profile) {
         return (
