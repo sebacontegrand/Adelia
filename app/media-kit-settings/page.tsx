@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, Plus, Trash2, ExternalLink } from "lucide-react"
+import { ImageUpload } from "@/components/ui/image-upload"
 import Link from "next/link"
 
 export default function MediaKitSettingsPage() {
@@ -165,8 +166,14 @@ export default function MediaKitSettingsPage() {
                                 <Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Logo URL</Label>
-                                <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
+                                <Label>Logo</Label>
+                                <div className="flex gap-4">
+                                    <ImageUpload
+                                        value={logoUrl}
+                                        onChange={(url) => setLogoUrl(url)}
+                                        onRemove={() => setLogoUrl("")}
+                                    />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

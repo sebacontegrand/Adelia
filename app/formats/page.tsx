@@ -1,132 +1,18 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Monitor, Smartphone, Video } from "lucide-react"
-
-type FormatType = "desktop" | "mobile" | "video" | null
-
-const formatData = {
-  desktop: [
-    {
-      id: 1,
-      title: "Leaderboard Banner",
-      size: "728x90",
-      image: "/desktop-leaderboard-banner-ad.jpg",
-    },
-    {
-      id: 2,
-      title: "Medium Rectangle",
-      size: "300x250",
-      image: "/desktop-medium-rectangle-ad.jpg",
-    },
-    {
-      id: 3,
-      title: "Wide Skyscraper",
-      size: "160x600",
-      image: "/desktop-wide-skyscraper-ad.jpg",
-    },
-    {
-      id: 4,
-      title: "Large Rectangle",
-      size: "336x280",
-      image: "/desktop-large-rectangle-ad.jpg",
-    },
-    {
-      id: 5,
-      title: "Billboard",
-      size: "970x250",
-      image: "/desktop-billboard-ad.jpg",
-    },
-    {
-      id: 6,
-      title: "Half Page",
-      size: "300x600",
-      image: "/desktop-half-page-ad.jpg",
-    },
-  ],
-  mobile: [
-    {
-      id: 1,
-      title: "Mobile Banner",
-      size: "320x50",
-      image: "/mobile-banner-ad.jpg",
-    },
-    {
-      id: 2,
-      title: "Mobile Leaderboard",
-      size: "320x100",
-      image: "/mobile-leaderboard-ad.jpg",
-    },
-    {
-      id: 3,
-      title: "Mobile Medium Rectangle",
-      size: "300x250",
-      image: "/mobile-medium-rectangle-ad.jpg",
-    },
-    {
-      id: 4,
-      title: "Mobile Large Banner",
-      size: "320x100",
-      image: "/mobile-large-banner-ad.jpg",
-    },
-    {
-      id: 5,
-      title: "Mobile Full Screen",
-      size: "320x480",
-      image: "/mobile-full-screen-ad.jpg",
-    },
-    {
-      id: 6,
-      title: "Mobile Interstitial",
-      size: "320x568",
-      image: "/mobile-interstitial-ad.jpg",
-    },
-  ],
-  video: [
-    {
-      id: 1,
-      title: "Pre-Roll Video",
-      size: "1920x1080",
-      image: "/video-pre-roll-ad-thumbnail.jpg",
-    },
-    {
-      id: 2,
-      title: "Mid-Roll Video",
-      size: "1280x720",
-      image: "/video-mid-roll-ad-thumbnail.jpg",
-    },
-    {
-      id: 3,
-      title: "Vertical Video",
-      size: "1080x1920",
-      image: "/vertical-video-ad-thumbnail.jpg",
-    },
-    {
-      id: 4,
-      title: "Square Video",
-      size: "1080x1080",
-      image: "/placeholder.svg?height=1080&width=1080",
-    },
-    {
-      id: 5,
-      title: "Bumper Ad",
-      size: "1920x1080",
-      image: "/placeholder.svg?height=1080&width=1920",
-    },
-    {
-      id: 6,
-      title: "Outstream Video",
-      size: "640x480",
-      image: "/placeholder.svg?height=480&width=640",
-    },
-  ],
-}
+import { adBuilderRegistry, FormatCategory } from "@/components/ad-builder/registry"
 
 export default function FormatsPage() {
-  const [selectedFormat, setSelectedFormat] = useState<FormatType>("desktop")
+  const [selectedFormat, setSelectedFormat] = useState<FormatCategory | null>("desktop")
+
+  const filteredFormats = useMemo(() => {
+    if (!selectedFormat) return []
+    return adBuilderRegistry.filter(format => format.category === selectedFormat)
+  }, [selectedFormat])
 
   return (
     <div className="min-h-screen">
@@ -168,22 +54,38 @@ export default function FormatsPage() {
             <Video className="h-5 w-5" />
             Video
           </Button>
+          {/* Add Social logic if needed in future */}
         </div>
 
         {/* Gallery Display */}
         {selectedFormat ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {formatData[selectedFormat].map((item) => (
-              <Card key={item.id} className="overflow-hidden border-border bg-card transition-all hover:shadow-lg">
-                <div className="aspect-video w-full overflow-hidden bg-secondary">
-                  <img src={item.image || "/placeholder.svg"} alt={item.title} className="h-full w-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <h3 className="mb-1 text-lg font-semibold">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.size} pixels</p>
-                </div>
-              </Card>
-            ))}
+            {filteredFormats.length > 0 ? (
+              filteredFormats.map((item) => (
+                <Card key={item.id} className="overflow-hidden border-border bg-card transition-all hover:shadow-lg flex flex-col">
+                  <div className="aspect-video w-full overflow-hidden bg-secondary relative group">
+                    <img src={item.image || "/placeholder.svg"} alt={item.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Link href={`/ad-builder?format=${item.id}`}>
+                        <Button variant="secondary">Create Now</Button>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold">{item.title}</h3>
+                      <span className="text-xs bg-secondary px-2 py-1 rounded text-muted-foreground">{item.status}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">{item.description}</p>
+                    <div className="text-xs text-slate-500">Dimensions: {item.dimensions}</div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                No formats found for this category yet.
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-dashed border-border bg-secondary/20">

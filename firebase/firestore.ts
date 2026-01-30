@@ -1,5 +1,5 @@
 
-import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, deleteDoc, doc, setDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase.config";
 
 export type AdRecord = {
@@ -134,16 +134,10 @@ export async function saveUserProfile(userId: string, data: Partial<UserProfile>
 export async function getUserProfile(userId: string) {
     try {
         const docRef = doc(db, "profiles", userId);
-        const docSnap = await getDocs(query(collection(db, "profiles"), where("userId", "==", userId)));
-        // Note: In Firestore, getting by ID via `getDoc` is better, but since userId is our key:
-        // Let's use getDoc directly if userId IS the document ID.
-        // My implementation above uses setDoc(doc(db, "profiles", userId)) so the document key IS the userId.
+        const docSnap = await getDoc(docRef);
 
-        // Correct approach:
-        const d = await import("firebase/firestore").then(m => m.getDoc(docRef));
-
-        if (d.exists()) {
-            return d.data() as UserProfile;
+        if (docSnap.exists()) {
+            return docSnap.data() as UserProfile;
         } else {
             return null;
         }

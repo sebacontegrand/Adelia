@@ -1,41 +1,29 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { getUserProfile, type UserProfile } from "@/firebase/firestore"
+import { Metadata } from "next"
+import { getUserProfileServer } from "@/lib/firebase-admin"
+import { ContactModal } from "@/components/media-kit/contact-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Mail, Layout, TrendingUp, Users, ShoppingCart } from "lucide-react"
+import { Mail, Layout, TrendingUp, Users } from "lucide-react"
 
-export default function PublicMediaKitPage() {
-    const params = useParams()
-    const userId = decodeURIComponent(params.userId as string)
+type Props = {
+    params: { userId: string }
+}
 
-    const [profile, setProfile] = useState<UserProfile | null>(null)
-    const [loading, setLoading] = useState(true)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const userId = decodeURIComponent(params.userId)
+    const profile = await getUserProfileServer(userId)
 
-    useEffect(() => {
-        if (userId) {
-            loadProfile(userId)
-        }
-    }, [userId])
-
-    async function loadProfile(id: string) {
-        setLoading(true)
-        const data = await getUserProfile(id)
-        setProfile(data)
-        setLoading(false)
+    return {
+        title: profile?.displayName ? `${profile.displayName} - Media Kit` : "Media Kit | Adelia",
+        description: profile?.bio || "View my media kit and advertising opportunities.",
     }
+}
 
-    if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-50">
-                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-            </div>
-        )
-    }
+export default async function PublicMediaKitPage({ params }: Props) {
+    const userId = decodeURIComponent(params.userId)
+    const profile = await getUserProfileServer(userId)
 
     if (!profile) {
         return (
@@ -66,12 +54,15 @@ export default function PublicMediaKitPage() {
                             <p className="text-lg text-slate-300 max-w-2xl text-balance">
                                 {profile.bio || "No bio available."}
                             </p>
-                            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white gap-2" asChild>
-                                <a href={`mailto:${profile.contactEmail}`}>
-                                    <Mail className="h-4 w-4" />
-                                    Contact for Sponsorships
-                                </a>
-                            </Button>
+                            <ContactModal
+                                contactEmail={profile.contactEmail}
+                                trigger={
+                                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                                        <Mail className="h-4 w-4" />
+                                        Contact for Sponsorships
+                                    </Button>
+                                }
+                            />
                         </div>
                     </div>
                 </div>
@@ -151,11 +142,15 @@ export default function PublicMediaKitPage() {
                                     </p>
                                 </CardContent>
                                 <CardFooter className="bg-slate-50 p-4 flex gap-3">
-                                    <Button className="w-full" asChild>
-                                        <a href={`mailto:${profile.contactEmail}?subject=Inquiry: ${slot.name}`}>
-                                            Inquire Now
-                                        </a>
-                                    </Button>
+                                    <ContactModal
+                                        contactEmail={profile.contactEmail}
+                                        subjectPrefix={`Inquiry: ${slot.name}`}
+                                        trigger={
+                                            <Button className="w-full">
+                                                Inquire Now
+                                            </Button>
+                                        }
+                                    />
                                     {/* Future: <Button variant="outline" className="w-full">Preview</Button> */}
                                 </CardFooter>
                             </Card>
