@@ -6,9 +6,11 @@ import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Navbar } from "@/components/navbar"
+import { useLanguage } from "@/app/context/language-context"
 
 export default function HomePage() {
   const { data: session, status } = useSession()
+  const { t } = useLanguage()
   const isAuthenticated = status === "authenticated"
   const isLoading = status === "loading"
 
@@ -56,7 +58,7 @@ export default function HomePage() {
         />
         <div className="relative z-10 flex min-h-screen items-center justify-end px-8">
           <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 shadow">
-            Click para entrar
+            {t("home.click_enter")}
           </div>
         </div>
       </div>
@@ -68,37 +70,36 @@ export default function HomePage() {
       <Navbar onSignOut={isAuthenticated ? handleSignOut : undefined} />
       <main className="container mx-auto px-4 py-12">
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-5xl font-bold text-balance">The complete platform to build digital ads.</h1>
+          <h1 className="mb-4 text-5xl font-bold text-balance">{t("home.title")}</h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground text-balance">
-            Your team's toolkit to stop configuring and start creating. Build, deploy, and scale the best advertising
-            experiences.
+            {t("home.subtitle")}
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/formats" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">Multiple Formats</h3>
+              <h3 className="mb-2 text-2xl font-bold">{t("home.card.formats.title")}</h3>
               <p className="text-muted-foreground">
-                Create ads for Desktop, Mobile, and Video platforms with our intuitive gallery system.
+                {t("home.card.formats.desc")}
               </p>
             </Link>
           </Card>
 
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/ad-builder" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">Ad Builder</h3>
+              <h3 className="mb-2 text-2xl font-bold">{t("home.card.builder.title")}</h3>
               <p className="text-muted-foreground">
-                Design custom advertisements with our powerful form builder and instant preview.
+                {t("home.card.builder.desc")}
               </p>
             </Link>
           </Card>
 
           <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
             <Link href="/chat" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">24/7 Support</h3>
+              <h3 className="mb-2 text-2xl font-bold">{t("home.card.support.title")}</h3>
               <p className="text-muted-foreground">
-                Get instant help with our AI-powered chatbot for all your queries and questions.
+                {t("home.card.support.desc")}
               </p>
             </Link>
           </Card>
@@ -117,9 +118,9 @@ export default function HomePage() {
 
           <Card className="relative z-10 w-full max-w-md border-border bg-card/90 p-8 backdrop-blur-sm">
             <div className="mb-8 text-center">
-              <h1 className="mb-2 text-4xl font-bold text-balance">Welcome to Adelia</h1>
+              <h1 className="mb-2 text-4xl font-bold text-balance">{t("home.welcome")}</h1>
               <p className="text-muted-foreground text-balance">
-                Your complete platform to create and manage digital advertisements
+                {t("home.welcome.desc")}
               </p>
             </div>
 
@@ -142,11 +143,11 @@ export default function HomePage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Login
+              {t("home.login")}
             </Button>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Secure authentication powered by Google</p>
+              <p>{t("home.secure_auth")}</p>
             </div>
           </Card>
         </section>

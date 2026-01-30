@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button"
 import { SavedAdsList } from "@/components/ad-builder/saved-ads-list"
 import { type AdRecord } from "@/firebase/firestore"
 import { Plus, LayoutGrid } from "lucide-react"
+import { useLanguage } from "@/app/context/language-context"
 
 export default function AdBuilderPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
+  const { t } = useLanguage()
   const isAuthenticated = status === "authenticated"
   const isLoading = status === "loading"
 
@@ -73,9 +75,9 @@ export default function AdBuilderPage() {
         <Navbar />
         <main className="container mx-auto px-4 py-12">
           <Card className="mx-auto max-w-2xl border-border bg-card p-8 text-center">
-            <h1 className="mb-2 text-3xl font-bold">Ad Builder requiere login</h1>
+            <h1 className="mb-2 text-3xl font-bold">{t("builder.require_login_title")}</h1>
             <p className="mb-6 text-sm text-muted-foreground">
-              Podes seguir explorando formatos, pero para generar anuncios necesitas iniciar sesion.
+              {t("builder.require_login_desc")}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
@@ -83,7 +85,7 @@ export default function AdBuilderPage() {
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
                 onClick={handleSignIn}
               >
-                Ir al login
+                {t("builder.go_to_login")}
               </button>
             </div>
           </Card>
@@ -104,18 +106,18 @@ export default function AdBuilderPage() {
               onClick={handleCreateNew}
               className="gap-2"
             >
-              <Plus className="h-4 w-4" /> Crear Nuevo
+              <Plus className="h-4 w-4" /> {t("builder.create_new")}
             </Button>
             <Button
               variant={viewMode === "saved" ? "default" : "outline"}
               onClick={() => { setViewMode("saved"); setInitialData(undefined); }}
               className="gap-2"
             >
-              <LayoutGrid className="h-4 w-4" /> Mis Guardados
+              <LayoutGrid className="h-4 w-4" /> {t("builder.saved_ads")}
             </Button>
           </div>
 
-          <h1 className="mb-3 text-4xl font-bold">Adelia Builder</h1>
+          <h1 className="mb-3 text-4xl font-bold">{t("builder.title")}</h1>
           {viewMode === "create" && selectedAdTypeEntry?.helperText ? (
             <div className="mx-auto max-w-6xl">
               <p
@@ -133,12 +135,11 @@ export default function AdBuilderPage() {
             <div className="mb-12 space-y-6">
               <div className="text-center">
                 <h2 className="mb-2 text-2xl font-bold">
-                  {initialData ? "Editando anuncio guardado" : "Elegi el tipo de anuncio"}
+                  {initialData ? t("builder.editing_saved") : t("builder.choose_type")}
                 </h2>
                 {!initialData && (
                   <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-                    Disponible en este momento: <strong>Push Expandable</strong>, <strong>Puzzle 300x250</strong> y{" "}
-                    <strong>ColorAd 300x250</strong> y <strong>Podcastwith 300x250</strong>. Pronto mas formatos!
+                    {t("builder.available_formats")}
                   </p>
                 )}
               </div>
@@ -148,16 +149,15 @@ export default function AdBuilderPage() {
             {!selectedAdType ? (
               // No selection state
               <div className="mx-auto max-w-2xl text-center p-8 text-muted-foreground">
-                <p>Selecciona un formato de la lista para comenzar a crear tu anuncio.</p>
+                <p>{t("builder.select_format_prompt")}</p>
               </div>
             ) : BuilderComponent ? (
               <BuilderComponent key={`${selectedAdType}-${(initialData as any)?.id || "new"}`} initialData={initialData} />
             ) : (
               <Card className="border-border bg-card p-8">
-                <h3 className="mb-2 text-xl font-semibold">Builder en camino</h3>
+                <h3 className="mb-2 text-xl font-semibold">{t("builder.coming_soon")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Todavia no esta disponible el builder para <strong>{selectedAdTypeEntry?.title ?? "este formato"}</strong>. Elegi el
-                  formato Push Expandable para continuar.
+                  {t("builder.coming_soon_desc")}
                 </p>
               </Card>
             )}

@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button"
 import { BarChart, Activity, DollarSign, MousePointer, Eye } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/app/context/language-context"
 
 interface AdPerformanceDialogProps {
     ad: AdRecord & { id: string }
 }
 
 export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
+    const { t } = useLanguage()
     const [open, setOpen] = useState(false)
 
     // MOCK DATA GENERATOR (Since real stats might be empty for demo)
@@ -61,27 +63,27 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Activity className="h-5 w-5 text-blue-500" />
-                        Performance: {ad.campaign}
+                        {t("dialog.performance")}: {ad.campaign}
                     </DialogTitle>
                     <DialogDescription>
-                        Analytics report for the last 7 days.
+                        {t("dialog.report_desc")}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 md:grid-cols-4 mb-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t("dialog.revenue")}</CardTitle>
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</div>
-                            <p className="text-xs text-muted-foreground">Est. earnings based on CPM ${ad.cpm || 5}</p>
+                            <p className="text-xs text-muted-foreground">{t("dialog.est_earnings")} ${ad.cpm || 5}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Impressions</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t("dialog.impressions")}</CardTitle>
                             <Eye className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -90,7 +92,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Clicks</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t("dialog.clicks")}</CardTitle>
                             <MousePointer className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -99,7 +101,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">CTR</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t("dialog.ctr")}</CardTitle>
                             <Activity className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -111,7 +113,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                 <div className="grid gap-4 md:grid-cols-2 h-[300px]">
                     <Card className="flex flex-col">
                         <CardHeader>
-                            <CardTitle className="text-base">Revenue Trend</CardTitle>
+                            <CardTitle className="text-base">{t("dialog.revenue_trend")}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1 min-h-0">
                             <ResponsiveContainer width="100%" height="100%">
@@ -120,7 +122,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                                     <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                                     <Tooltip
-                                        formatter={(value: number) => [`$${value.toFixed(2)}`, "Revenue"]}
+                                        formatter={(value: number) => [`$${value.toFixed(2)}`, t("dialog.revenue")]}
                                         contentStyle={{ borderRadius: '8px' }}
                                     />
                                     <Area type="monotone" dataKey="revenue" stroke="#16a34a" fill="#dcfce7" strokeWidth={2} />
@@ -131,7 +133,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
 
                     <Card className="flex flex-col">
                         <CardHeader>
-                            <CardTitle className="text-base">Impressions vs Clicks</CardTitle>
+                            <CardTitle className="text-base">{t("dialog.imp_vs_clicks")}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1 min-h-0">
                             <ResponsiveContainer width="100%" height="100%">

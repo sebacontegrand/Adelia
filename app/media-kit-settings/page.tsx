@@ -14,11 +14,13 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, Plus, Trash2, ExternalLink } from "lucide-react"
 import { ImageUpload } from "@/components/ui/image-upload"
 import Link from "next/link"
+import { useLanguage } from "@/app/context/language-context"
 
 export default function MediaKitSettingsPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const { toast } = useToast()
+    const { t } = useLanguage()
 
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
@@ -44,8 +46,8 @@ export default function MediaKitSettingsPage() {
             const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
             if (!adminEmails.includes(session.user.email)) {
                 toast({
-                    title: "Access Denied",
-                    description: "You are not authorized to edit Media Kit settings.",
+                    title: t("media_kit.access_denied"),
+                    description: t("media_kit.access_denied_desc"),
                     variant: "destructive"
                 })
                 router.push("/")
@@ -90,7 +92,7 @@ export default function MediaKitSettingsPage() {
             }
 
             await saveUserProfile(session.user.email, profileData)
-            toast({ title: "Profile Saved", description: "Your media kit has been updated." })
+            toast({ title: t("media_kit.saved"), description: t("media_kit.saved_desc") })
         } catch (error) {
             console.error(error)
             toast({ title: "Error", description: "Failed to save profile.", variant: "destructive" })
@@ -128,19 +130,19 @@ export default function MediaKitSettingsPage() {
             <main className="container mx-auto max-w-4xl p-6 space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">Media Kit Settings</h1>
-                        <p className="text-slate-400">Configure your public sales page.</p>
+                        <h1 className="text-3xl font-bold text-white">{t("media_kit.title")}</h1>
+                        <p className="text-slate-400">{t("media_kit.subtitle")}</p>
                     </div>
                     <div className="flex gap-3">
                         <Link href={publicUrl} target="_blank">
                             <Button variant="outline" className="border-white/10 text-white hover:bg-neutral-800 bg-transparent">
                                 <ExternalLink className="mr-2 h-4 w-4" />
-                                View Public Page
+                                {t("media_kit.view_public")}
                             </Button>
                         </Link>
                         <Button onClick={handleSave} disabled={isSaving} className="bg-white text-black hover:bg-slate-200">
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save Changes
+                            {t("media_kit.save_changes")}
                         </Button>
                     </div>
                 </div>
@@ -149,24 +151,24 @@ export default function MediaKitSettingsPage() {
                     {/* General Info */}
                     <Card className="bg-neutral-900 border-white/10 text-white">
                         <CardHeader>
-                            <CardTitle>Brand Profile</CardTitle>
-                            <CardDescription className="text-slate-400">How you appear to advertisers.</CardDescription>
+                            <CardTitle>{t("media_kit.brand_profile")}</CardTitle>
+                            <CardDescription className="text-slate-400">{t("media_kit.brand_desc")}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Display Name</Label>
+                                <Label>{t("media_kit.display_name")}</Label>
                                 <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. TechDaily Blog" className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Bio / About Us</Label>
-                                <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Describe your audience and content..." className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
+                                <Label>{t("media_kit.bio")}</Label>
+                                <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t("media_kit.bio_placeholder")} className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Contact Email</Label>
+                                <Label>{t("media_kit.contact_email")}</Label>
                                 <Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Logo</Label>
+                                <Label>{t("media_kit.logo")}</Label>
                                 <div className="flex gap-4">
                                     <ImageUpload
                                         value={logoUrl}
@@ -181,16 +183,16 @@ export default function MediaKitSettingsPage() {
                     {/* Metrics */}
                     <Card className="bg-neutral-900 border-white/10 text-white">
                         <CardHeader>
-                            <CardTitle>Traffic Metrics</CardTitle>
-                            <CardDescription className="text-slate-400">Highlight your reach.</CardDescription>
+                            <CardTitle>{t("media_kit.traffic_metrics")}</CardTitle>
+                            <CardDescription className="text-slate-400">{t("media_kit.traffic_desc")}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Monthly Views</Label>
+                                <Label>{t("media_kit.monthly_views")}</Label>
                                 <Input type="number" value={monthlyViews} onChange={e => setMonthlyViews(e.target.value)} placeholder="e.g. 50000" className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Audience Description</Label>
+                                <Label>{t("media_kit.audience_desc")}</Label>
                                 <Input value={audience} onChange={e => setAudience(e.target.value)} placeholder="e.g. Tech enthusiasts, aged 25-40" className="bg-neutral-950 border-white/10 text-white placeholder:text-slate-500" />
                             </div>
                         </CardContent>
@@ -201,37 +203,37 @@ export default function MediaKitSettingsPage() {
                 <Card className="bg-neutral-900 border-white/10 text-white">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Ad Inventory</CardTitle>
-                            <CardDescription className="text-slate-400">Define the slots you are selling.</CardDescription>
+                            <CardTitle>{t("media_kit.ad_inventory")}</CardTitle>
+                            <CardDescription className="text-slate-400">{t("media_kit.inventory_desc")}</CardDescription>
                         </div>
                         <Button size="sm" variant="outline" onClick={addSlot} className="border-white/10 text-white hover:bg-neutral-800 bg-transparent">
-                            <Plus className="mr-2 h-4 w-4" /> Add Slot
+                            <Plus className="mr-2 h-4 w-4" /> {t("media_kit.add_slot")}
                         </Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {slots.length === 0 && (
                             <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-lg">
-                                No slots defined yet. Add one to start selling!
+                                {t("media_kit.no_slots")}
                             </div>
                         )}
                         {slots.map((slot) => (
                             <div key={slot.id} className="flex gap-4 items-start p-4 bg-neutral-950 rounded-lg border border-white/10">
                                 <div className="grid gap-4 flex-1 md:grid-cols-3">
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-slate-400">Name</Label>
+                                        <Label className="text-xs text-slate-400">{t("media_kit.slot_name")}</Label>
                                         <Input value={slot.name} onChange={e => updateSlot(slot.id, "name", e.target.value)} placeholder="Slot Name" className="bg-neutral-900 border-white/10 text-white" />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-slate-400">Format</Label>
+                                        <Label className="text-xs text-slate-400">{t("media_kit.slot_format")}</Label>
                                         <Input value={slot.format} onChange={e => updateSlot(slot.id, "format", e.target.value)} placeholder="e.g. Banner 728x90" className="bg-neutral-900 border-white/10 text-white" />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-slate-400">Price ($)</Label>
+                                        <Label className="text-xs text-slate-400">{t("media_kit.slot_price")}</Label>
                                         <Input type="number" value={slot.price} onChange={e => updateSlot(slot.id, "price", Number(e.target.value))} className="bg-neutral-900 border-white/10 text-white" />
                                     </div>
                                     <div className="md:col-span-3 space-y-1">
-                                        <Label className="text-xs text-slate-400">Description</Label>
-                                        <Input value={slot.description || ""} onChange={e => updateSlot(slot.id, "description", e.target.value)} placeholder="Placement details..." className="bg-neutral-900 border-white/10 text-white" />
+                                        <Label className="text-xs text-slate-400">{t("media_kit.slot_description")}</Label>
+                                        <Input value={slot.description || ""} onChange={e => updateSlot(slot.id, "description", e.target.value)} placeholder={t("media_kit.slot_placeholder")} className="bg-neutral-900 border-white/10 text-white" />
                                     </div>
                                 </div>
                                 <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-neutral-800 mt-6" onClick={() => removeSlot(slot.id)}>

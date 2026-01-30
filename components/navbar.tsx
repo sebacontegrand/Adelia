@@ -6,6 +6,8 @@ import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sparkles } from "lucide-react"
+import { LanguageToggle } from "@/components/language-toggle"
+import { useLanguage } from "@/app/context/language-context"
 
 type NavbarProps = {
   // onSignOut is now optional/deprecated as Navbar handles it internally via NextAuth
@@ -16,6 +18,7 @@ type NavbarProps = {
 export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
   const pathname = usePathname()
   const { data: session, status } = useSession()
+  const { t } = useLanguage()
   const isAuthenticated = status === "authenticated"
 
   const handleSignOut = () => {
@@ -31,12 +34,12 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
   const isAdmin = session?.user?.email && adminEmails.includes(session.user.email)
 
   const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/formats", label: "Formats" },
-    { href: "/ad-builder", label: "Ad Builder" },
+    { href: "/", label: t("nav.home") },
+    { href: "/formats", label: t("nav.formats") },
+    { href: "/ad-builder", label: t("nav.ad_builder") },
     ...(isAdmin ? [
-      { href: "/media-kit-settings", label: "Media Kit" },
-      { href: "/admin", label: "Admin Dashboard" }
+      { href: "/media-kit-settings", label: t("nav.media_kit") },
+      { href: "/admin", label: t("nav.admin") }
     ] : []),
     { href: "/chat", label: "Adelia Assistant", icon: Sparkles },
   ]
@@ -76,22 +79,25 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
           ))}
         </div>
 
-        {isAuthenticated ? (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
-                <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium hidden sm:inline-block">
-                {session?.user?.name}
-              </span>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex items-center gap-4">
+          <LanguageToggle />
+          {isAuthenticated ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
+                  <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium hidden sm:inline-block">
+                  {session?.user?.name}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                {t("nav.sign_out")}
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
     </nav>
   )

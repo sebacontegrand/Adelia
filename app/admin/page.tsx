@@ -13,11 +13,13 @@ import { Loader2, Trash2, ExternalLink, TrendingUp, DollarSign } from "lucide-re
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { AdPerformanceDialog } from "@/components/admin/ad-performance-dialog"
+import { useLanguage } from "@/app/context/language-context"
 
 export default function AdminPage() {
     const { data: session, status } = useSession()
     const router = useRouter()
     const { toast } = useToast()
+    const { t } = useLanguage()
 
     const [isLoading, setIsLoading] = useState(true)
     const [ads, setAds] = useState<(AdRecord & { id: string })[]>([])
@@ -85,54 +87,57 @@ export default function AdminPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            Admin Dashboard
+                            {t("admin.title")}
                         </h1>
-                        <p className="text-slate-500">Overview of all platform activity and revenue.</p>
+                        <p className="text-slate-500">{t("admin.subtitle")}</p>
                     </div>
-                    <Button onClick={loadData} variant="outline">Refresh Data</Button>
+                    <Button onClick={loadData} variant="outline">{t("admin.refresh")}</Button>
                 </div>
 
                 <GenericStats
                     adsCount={ads.length}
                     profilesCount={profiles.length}
                     revenue={totalRevenue}
+                    t={t}
                 />
 
                 <Tabs defaultValue="ads" className="mt-8">
                     <TabsList className="bg-white border">
-                        <TabsTrigger value="ads">All Ads ({ads.length})</TabsTrigger>
-                        <TabsTrigger value="profiles">Media Kits ({profiles.length})</TabsTrigger>
+                        <TabsTrigger value="ads">{t("admin.tab.ads")} ({ads.length})</TabsTrigger>
+                        <TabsTrigger value="profiles">{t("admin.tab.profiles")} ({profiles.length})</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="ads">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Global Ad Inventory</CardTitle>
-                                <CardDescription>All ads created by all users.</CardDescription>
+                                <CardTitle>{t("admin.ads.title")}</CardTitle>
+                                <CardDescription>{t("admin.ads.desc")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Campaign</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>User / Brand</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Created</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                            <TableHead>{t("admin.table.campaign")}</TableHead>
+                                            <TableHead>{t("admin.table.type")}</TableHead>
+                                            <TableHead>{t("admin.table.user")}</TableHead>
+                                            <TableHead>{t("admin.table.status")}</TableHead>
+                                            <TableHead>{t("admin.table.created")}</TableHead>
+                                            <TableHead className="text-right">{t("admin.table.actions")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {ads.map((ad) => (
                                             <TableRow key={ad.id}>
                                                 <TableCell className="font-medium">{ad.campaign}</TableCell>
-                                                <TableCell><span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">{ad.type || "Display"}</span></TableCell>
+                                                <TableCell><span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">{ad.type || t("display")}</span></TableCell>
                                                 <TableCell>{ad.userId}</TableCell>
                                                 <TableCell>
                                                     <span className={`px-2 py-1 rounded text-xs ${ad.status === 'active' ? 'bg-green-100 text-green-700' :
                                                         ad.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-700'
                                                         }`}>
-                                                        {ad.status || 'Draft'}
+                                                        {ad.status === 'active' ? t("status.active") :
+                                                            ad.status === 'paused' ? t("status.paused") :
+                                                                t("status.draft")}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-slate-500 text-sm">
@@ -165,18 +170,18 @@ export default function AdminPage() {
                     <TabsContent value="profiles">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Registered Media Kits</CardTitle>
-                                <CardDescription>All users who have set up a public profile.</CardDescription>
+                                <CardTitle>{t("admin.profiles.title")}</CardTitle>
+                                <CardDescription>{t("admin.profiles.desc")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Brand</TableHead>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>Traffic</TableHead>
-                                            <TableHead>Slots</TableHead>
-                                            <TableHead className="text-right">Public Page</TableHead>
+                                            <TableHead>{t("admin.profiles.brand")}</TableHead>
+                                            <TableHead>{t("admin.profiles.email")}</TableHead>
+                                            <TableHead>{t("admin.profiles.traffic")}</TableHead>
+                                            <TableHead>{t("admin.profiles.slots")}</TableHead>
+                                            <TableHead className="text-right">{t("admin.profiles.public_page")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -187,12 +192,12 @@ export default function AdminPage() {
                                                     {profile.displayName || "Untitled"}
                                                 </TableCell>
                                                 <TableCell>{profile.contactEmail}</TableCell>
-                                                <TableCell>{profile.trafficStats?.monthlyViews || 0} /mo</TableCell>
+                                                <TableCell>{profile.trafficStats?.monthlyViews || 0} /{t("month")}</TableCell>
                                                 <TableCell>{profile.availableSlots?.length || 0}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Link href={`/mk/${profile.userId}`} target="_blank">
                                                         <Button size="sm" variant="outline">
-                                                            View Page <ExternalLink className="ml-2 h-3 w-3" />
+                                                            {t("admin.profiles.view_page")} <ExternalLink className="ml-2 h-3 w-3" />
                                                         </Button>
                                                     </Link>
                                                 </TableCell>
@@ -209,12 +214,12 @@ export default function AdminPage() {
     )
 }
 
-function GenericStats({ adsCount, profilesCount, revenue }: { adsCount: number, profilesCount: number, revenue: number }) {
+function GenericStats({ adsCount, profilesCount, revenue, t }: { adsCount: number, profilesCount: number, revenue: number, t: (key: string) => string }) {
     return (
         <div className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("admin.total_revenue")}</CardTitle>
                     <DollarSign className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
@@ -224,7 +229,7 @@ function GenericStats({ adsCount, profilesCount, revenue }: { adsCount: number, 
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Ads Generated</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("admin.total_ads")}</CardTitle>
                     <TrendingUp className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
@@ -233,7 +238,7 @@ function GenericStats({ adsCount, profilesCount, revenue }: { adsCount: number, 
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Media Kits</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t("admin.active_kits")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{profilesCount}</div>
