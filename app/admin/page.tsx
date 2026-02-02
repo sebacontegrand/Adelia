@@ -63,14 +63,18 @@ export default function AdminPage() {
         }
     }
 
-    // Calculate aggregated stats (Mock logic for showcase if real stats are missing)
+    // Calculate aggregated stats using real data
     const totalRevenue = ads.reduce((acc, ad) => {
-        // Assume simplified revenue model: Mock Impressions * CPM
-        // In real app, sum actual stats
-        const mockImpressions = 5000 // Average
+        const clicks = ad.totalClicks || 0
+        const impressions = ad.totalImpressions || 0
         const cpm = ad.cpm || 5
-        return acc + (mockImpressions / 1000) * cpm
+        // We can model revenue either by CPM (impressions) or CPC. 
+        // Here we stick to CPM since the user input is CPM.
+        return acc + (impressions / 1000) * cpm
     }, 0)
+
+    const totalImpressions = ads.reduce((acc, ad) => acc + (ad.totalImpressions || 0), 0)
+    const totalClicks = ads.reduce((acc, ad) => acc + (ad.totalClicks || 0), 0)
 
     if (status === "loading" || isLoading) {
         return (
@@ -121,6 +125,8 @@ export default function AdminPage() {
                                             <TableHead>{t("admin.table.type")}</TableHead>
                                             <TableHead>{t("admin.table.user")}</TableHead>
                                             <TableHead>{t("admin.table.status")}</TableHead>
+                                            <TableHead>{t("admin.table.impressions") || "Impresiones"}</TableHead>
+                                            <TableHead>{t("admin.table.clicks") || "Clicks"}</TableHead>
                                             <TableHead>{t("admin.table.created")}</TableHead>
                                             <TableHead className="text-right">{t("admin.table.actions")}</TableHead>
                                         </TableRow>
@@ -140,6 +146,8 @@ export default function AdminPage() {
                                                                 t("status.draft")}
                                                     </span>
                                                 </TableCell>
+                                                <TableCell className="font-mono text-xs">{ad.totalImpressions || 0}</TableCell>
+                                                <TableCell className="font-mono text-xs">{ad.totalClicks || 0}</TableCell>
                                                 <TableCell className="text-slate-500 text-sm">
                                                     {ad.createdAt?.toDate ? ad.createdAt.toDate().toLocaleDateString() : "Unknown"}
                                                 </TableCell>

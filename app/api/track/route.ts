@@ -52,29 +52,36 @@ export async function POST(req: NextRequest) {
 
 async function recordEvent(adId: string, event: string) {
     try {
-        // We act as admin logic here or just regular write if rules allow. 
-        // For simplicity in this project context, we are using the client SDK imported in server context.
-        // Ideally use firebase-admin for server-side operations to bypass client rules if needed, 
-        // but if rules allow public write for stats increment, client SDK is fine.
-
         const dateId = getTodayDateId();
         const statsRef = doc(db, "ads", adId, "daily_stats", dateId);
 
-        // Map event to field
-        const updateData: any = {};
+        // 1. Daily Stats Update Data
+        const dailyUpdate: any = {};
+        // 2. Aggregate Stats Update Data (matching AdRecord type)
+        const aggregateUpdate: any = {};
 
         if (event === "view" || event === "impression") {
-            updateData.views = increment(1);
-            updateData.impressions = increment(1); // keeping both for compatibility
+            dailyUpdate.impressions = increment(1);
+            dailyUpdate.views = increment(1);
+
+            aggregateUpdate.totalImpressions = increment(1);
+            aggregateUpdate.totalViews = increment(1);
         } else if (event === "click") {
-            updateData.clicks = increment(1);
+            dailyUpdate.clicks = increment(1);
+
+            aggregateUpdate.totalClicks = increment(1);
         } else {
             // custom event support
-            updateData[`events.${event}`] = increment(1);
+            dailyUpdate[`events.${event}`] = increment(1);
+            aggregateUpdate[`events.${event}`] = increment(1);
         }
 
-        // Use setDoc with merge: true to create if not exists
-        await setDoc(statsRef, updateData, { merge: true });
+        // Update Daily Stats subcollection
+        await setDoc(statsRef, dailyUpdate, { merge: true });
+
+        // Update Aggregate Stats on the main ad document
+        const adRef = doc(db, "ads", adId);
+        await setDoc(adRef, aggregateUpdate, { merge: true });
 
     } catch (error) {
         console.error(`Failed to record stats for ${adId}:`, error);

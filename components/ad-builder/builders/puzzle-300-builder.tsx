@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Download, Upload, Copy, Save } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { type AdRecord, saveAdRecord, getUserProfile } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
@@ -279,6 +279,7 @@ function buildPuzzleHtml(params: {
   var clickTag = urlParams.get("clickTag"); // May be null or ""
 
   function exitClick(landingUrl) {
+    if (window.reportEvent) window.reportEvent('click');
     if (clickTag) {
       window.open(clickTag + encodeURIComponent(landingUrl), "_blank");
     } else {
@@ -456,7 +457,20 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
   const { toast } = useToast()
   const { data: session } = useSession()
 
-  const [availableSlots, setAvailableSlots] = useState<Array<{ id: string, name: string, format: string }>>([])
+  const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
+
+  const [campaign, setCampaign] = useState(initialData?.campaign ?? "")
+  const [placement, setPlacement] = useState(initialData?.placement ?? "")
+  const [targetElementId, setTargetElementId] = useState(initialData?.settings?.targetElementId ?? "")
+
+  // Pricing & Budget
+  const [cpm, setCpm] = useState<number>(initialData?.cpm || 5.0)
+  const [budget, setBudget] = useState<number>(initialData?.budget || 100)
+
+  const isAdmin = useMemo(() => {
+    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
+    return session?.user?.email && adminEmails.includes(session.user.email)
+  }, [session])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -468,9 +482,15 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
     }
   }, [session])
 
-  const [campaign, setCampaign] = useState(initialData?.campaign ?? "")
-  const [placement, setPlacement] = useState(initialData?.placement ?? "")
-  const [targetElementId, setTargetElementId] = useState(initialData?.settings?.targetElementId ?? "")
+  // Price sync
+  useEffect(() => {
+    if (targetElementId && targetElementId !== "none") {
+      const selectedSlot = availableSlots.find(s => s.id === targetElementId)
+      if (selectedSlot && selectedSlot.price) {
+        setCpm(selectedSlot.price)
+      }
+    }
+  }, [targetElementId, availableSlots])
 
   const [brandLabel, setBrandLabel] = useState(initialData?.settings?.brandLabel ?? "Jhon Deere")
   const [brandName, setBrandName] = useState(initialData?.settings?.brandName ?? "Arma el Nuevo 830HP")
@@ -732,7 +752,10 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
           logo: uploadedLogoUrl
         },
         htmlUrl,
-        settings: manifest.settings
+        settings: manifest.settings,
+        cpm,
+        budget,
+        status: initialData?.status || "active"
       }, docId)
 
       // 6. Generate Embed Script
@@ -853,6 +876,33 @@ export function Puzzle300Builder({ initialData }: { initialData?: AdRecord }) {
             <div className="space-y-2">
               <Label>Marca (titulo)</Label>
               <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label>CPM ($) {!isAdmin && "(Read Only)"}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={cpm}
+                onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                disabled={!isAdmin}
+                className={!isAdmin ? "bg-muted" : ""}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {isAdmin ? "Cost per 1,000 impressions." : "Price set by administrator."}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Total Budget ($)</Label>
+              <Input
+                type="number"
+                step="1"
+                value={budget}
+                onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+              />
+              <p className="text-[10px] text-muted-foreground font-medium">Max spend for this ad.</p>
             </div>
           </div>
 

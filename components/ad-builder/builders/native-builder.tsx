@@ -5,9 +5,10 @@ import { useSession } from "next-auth/react"
 import { Loader2, Upload, Save, Image as ImageIcon, Copy, X } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { type AdRecord, saveAdRecord, getUserProfile } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
+import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,7 +35,16 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
     // Manual Target
     const [manualTargetId, setManualTargetId] = useState(initialData?.settings?.targetElementId || "")
 
-    const [availableSlots, setAvailableSlots] = useState<Array<{ id: string, name: string, format: string }>>([])
+    // Pricing & Budget
+    const [cpm, setCpm] = useState<number>(initialData?.cpm || 5.0)
+    const [budget, setBudget] = useState<number>(initialData?.budget || 100)
+
+    const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
+
+    const isAdmin = useMemo(() => {
+        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
+        return session?.user?.email && adminEmails.includes(session.user.email)
+    }, [session])
     const [isWorking, setIsWorking] = useState(false)
 
     // Output Dialog
@@ -51,6 +61,16 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
             })
         }
     }, [session])
+
+    // Price sync
+    useEffect(() => {
+        if (placement && placement !== "manual") {
+            const slot = availableSlots.find(s => s.id === placement)
+            if (slot && slot.price) {
+                setCpm(slot.price)
+            }
+        }
+    }, [placement, availableSlots])
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -124,7 +144,10 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                 zipUrl: "-", // No ZIP
                 assets: {},
                 htmlUrl: "-", // No HTML file
-                settings
+                settings,
+                cpm,
+                budget,
+                status: initialData?.status || "active"
             }
 
             // Pass ID as second arg if it exists (for updates)
@@ -246,6 +269,33 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                                 </p>
                             </div>
                         )}
+
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                            <div className="space-y-2">
+                                <Label>CPM ($) {!isAdmin && "(Read Only)"}</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={cpm}
+                                    onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                                    disabled={!isAdmin}
+                                    className={!isAdmin ? "bg-muted" : ""}
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    {isAdmin ? "Cost per 1,000 impressions." : "Price set by administrator."}
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Total Budget ($)</Label>
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    value={budget}
+                                    onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+                                />
+                                <p className="text-[10px] text-muted-foreground font-medium">Maximum spend for this ad.</p>
+                            </div>
+                        </div>
 
                         <Button onClick={handleSave} disabled={isWorking} className="w-full">
                             {isWorking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

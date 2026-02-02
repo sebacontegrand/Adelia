@@ -16,21 +16,32 @@ export async function GET(req: NextRequest) {
         // 1. Fetch all ads for this user
         const ads = await getUserAds(userId);
 
-        // 2. Filter for ads that have a "selector" defined in their settings (i.e., they are mapped to a DOM ID)
-        // For now, we will Mock this mapping or check if 'placement' is used as selector #placement
-        // In a real app, users would explicitly map "Ad Unit A" -> "HTML ID #header"
+        // 2. Fetch origin for tracking
+        const origin = req.headers.get("origin") || req.nextUrl.origin;
 
         const placements = ads
             .filter(ad => ad.placement || (ad.settings && ad.settings.targetElementId))
             .map(ad => {
                 // Determine DOM Selector
-                // If it's a Slot ID (from Media Kit), we assume the user has a <div id="slot-id"></div>
-                // Fallback to legacy settings.targetElementId
                 const selectorId = ad.placement || ad.settings.targetElementId;
                 const selector = selectorId.startsWith("#") ? selectorId : `#${selectorId}`;
 
                 let html = "";
                 let type = "iframe";
+
+                const trackingCode = `
+<script>
+(function() {
+    var adId = "${ad.id}";
+    var trackUrl = "${origin}/api/track";
+    var img = new Image();
+    img.src = trackUrl + "?adId=" + adId + "&event=view&t=" + Date.now();
+    window.reportEvent = function(event) {
+        var clickImg = new Image();
+        clickImg.src = trackUrl + "?adId=" + adId + "&event=" + event + "&t=" + Date.now();
+    };
+})();
+</script>`;
 
                 if (ad.type === "native-display") {
                     type = "native";
@@ -43,11 +54,12 @@ export async function GET(req: NextRequest) {
                             <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Sponsored</div>
                             <h3 style="margin: 0 0 8px 0; font-size: 1.125rem; font-weight: 700; line-height: 1.4;">${s.headline}</h3>
                             <p style="margin: 0 0 16px 0; font-size: 0.875rem; color: #475569; line-height: 1.5;">${s.body}</p>
-                            <a href="${s.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #2563eb; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 0.875rem; font-weight: 500;">
+                            <a href="${s.url}" target="_blank" rel="noopener noreferrer" onclick="if(window.reportEvent) window.reportEvent('click')" style="display: inline-block; background-color: #2563eb; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 0.875rem; font-weight: 500;">
                                 ${s.ctaText}
                             </a>
                         </div>
                     </div>
+                    ${trackingCode}
                     `;
                 } else {
                     // Standard Iframe Ad

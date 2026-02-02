@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AdRecord, getAdStats } from "@/firebase/firestore"
+import { AdRecord, getAdStats, updateAdRecord } from "@/firebase/firestore"
 import { Button } from "@/components/ui/button"
-import { BarChart, Activity, DollarSign, MousePointer, Eye } from "lucide-react"
+import { BarChart, Activity, DollarSign, MousePointer, Eye, Loader2, Save } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/app/context/language-context"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 
 interface AdPerformanceDialogProps {
     ad: AdRecord & { id: string }
@@ -15,42 +18,65 @@ interface AdPerformanceDialogProps {
 
 export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
     const { t } = useLanguage()
+    const { toast } = useToast()
     const [open, setOpen] = useState(false)
 
-    // MOCK DATA GENERATOR (Since real stats might be empty for demo)
-    // In production, fetch this via getAdStats(ad.id)
-    const data = useMemo(() => {
-        const days = 7
-        const data = []
-        const now = new Date()
+    const [performanceData, setPerformanceData] = useState<any[]>([])
+    const [loading, setLoading] = useState(false)
+    const [saving, setSaving] = useState(false)
 
-        // Deterministic random based on ID for consistency
-        const seed = ad.id.charCodeAt(0)
+    // Editing states
+    const [editCpm, setEditCpm] = useState(ad.cpm || 5.0)
+    const [editBudget, setEditBudget] = useState(ad.budget || 100)
 
-        for (let i = days; i >= 0; i--) {
-            const date = new Date(now)
-            date.setDate(date.getDate() - i)
-
-            // Randomize somewhat realistic stats
-            const impressions = Math.floor(1000 + (Math.random() * 5000))
-            const clicks = Math.floor(impressions * (0.01 + Math.random() * 0.05))
-            const cpm = ad.cpm || 5 // Default $5 CPM
-            const revenue = (impressions / 1000) * cpm
-
-            data.push({
-                date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                impressions,
-                clicks,
-                revenue: Number(revenue.toFixed(2))
-            })
+    useEffect(() => {
+        if (open) {
+            loadStats()
         }
-        return data
-    }, [ad.id])
+    }, [open, ad.id])
 
-    const totalImpressions = data.reduce((acc, curr) => acc + curr.impressions, 0)
-    const totalClicks = data.reduce((acc, curr) => acc + curr.clicks, 0)
-    const totalRevenue = data.reduce((acc, curr) => acc + curr.revenue, 0)
-    const ctr = ((totalClicks / totalImpressions) * 100).toFixed(2)
+    async function loadStats() {
+        setLoading(true)
+        try {
+            const stats = await getAdStats(ad.id, 7)
+            const formatted = stats.map((s: any) => {
+                const [y, m, d] = s.date.split("-")
+                const dateObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+                return {
+                    date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    impressions: s.impressions || 0,
+                    clicks: s.clicks || 0,
+                    revenue: Number(((s.impressions || 0) / 1000 * (editCpm)).toFixed(2))
+                }
+            })
+            setPerformanceData(formatted)
+        } catch (error) {
+            console.error("Error loading stats:", error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    async function handleUpdateFinancials() {
+        setSaving(true)
+        try {
+            await updateAdRecord(ad.id, {
+                cpm: editCpm,
+                budget: editBudget
+            })
+            toast({ title: "Updated", description: "Financial settings updated successfully." })
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to update visuals", variant: "destructive" })
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const data = performanceData
+    const totalImpressions = ad.totalImpressions || 0
+    const totalClicks = ad.totalClicks || 0
+    const totalRevenue = (totalImpressions / 1000) * (ad.cpm || 5)
+    const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00"
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -78,7 +104,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</div>
-                            <p className="text-xs text-muted-foreground">{t("dialog.est_earnings")} ${ad.cpm || 5}</p>
+                            <p className="text-xs text-muted-foreground">{t("dialog.est_earnings")} ${editCpm}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -110,45 +136,92 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                     </Card>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 h-[300px]">
-                    <Card className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-base">{t("dialog.revenue_trend")}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 min-h-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                    <Tooltip
-                                        formatter={(value: number) => [`$${value.toFixed(2)}`, t("dialog.revenue")]}
-                                        contentStyle={{ borderRadius: '8px' }}
-                                    />
-                                    <Area type="monotone" dataKey="revenue" stroke="#16a34a" fill="#dcfce7" strokeWidth={2} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
+                <Card className="mb-6 border-blue-200 bg-blue-50/50">
+                    <CardHeader className="py-3">
+                        <CardTitle className="text-sm">Financial Controls (Admin Only)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-3 items-end pb-4">
+                        <div className="space-y-2">
+                            <Label className="text-xs">CPM ($)</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={editCpm}
+                                onChange={(e) => setEditCpm(parseFloat(e.target.value) || 0)}
+                                className="h-8 bg-white"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs">Budget ($)</Label>
+                            <Input
+                                type="number"
+                                step="1"
+                                value={editBudget}
+                                onChange={(e) => setEditBudget(parseFloat(e.target.value) || 0)}
+                                className="h-8 bg-white"
+                            />
+                        </div>
+                        <Button
+                            size="sm"
+                            onClick={handleUpdateFinancials}
+                            disabled={saving}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                            Update Ad
+                        </Button>
+                    </CardContent>
+                </Card>
 
-                    <Card className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-base">{t("dialog.imp_vs_clicks")}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 min-h-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                                    <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                                    <Tooltip contentStyle={{ borderRadius: '8px' }} />
-                                    <Area type="monotone" dataKey="impressions" stackId="1" stroke="#2563eb" fill="#dbeafe" strokeWidth={2} />
-                                    <Area type="monotone" dataKey="clicks" stackId="2" stroke="#9333ea" fill="#f3e8ff" strokeWidth={2} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </div>
+                {loading ? (
+                    <div className="flex h-[300px] items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                    </div>
+                ) : data.length === 0 ? (
+                    <div className="flex h-[300px] items-center justify-center text-muted-foreground italic">
+                        No real data collected yet for this ad. Charts will appear once impressions are recorded.
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 h-[300px]">
+                        <Card className="flex flex-col">
+                            <CardHeader>
+                                <CardTitle className="text-base">{t("dialog.revenue_trend")}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={data}>
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                                        <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                                        <Tooltip
+                                            formatter={(value: number) => [`$${value.toFixed(2)}`, t("dialog.revenue")]}
+                                            contentStyle={{ borderRadius: '8px' }}
+                                        />
+                                        <Area type="monotone" dataKey="revenue" stroke="#16a34a" fill="#dcfce7" strokeWidth={2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="flex flex-col">
+                            <CardHeader>
+                                <CardTitle className="text-base">{t("dialog.imp_vs_clicks")}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={data}>
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                                        <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px' }} />
+                                        <Area type="monotone" dataKey="impressions" stackId="1" stroke="#2563eb" fill="#dbeafe" strokeWidth={2} />
+                                        <Area type="monotone" dataKey="clicks" stackId="2" stroke="#9333ea" fill="#f3e8ff" strokeWidth={2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     )

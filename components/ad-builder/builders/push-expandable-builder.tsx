@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Upload, Download, Image as ImageIcon, Save, Copy } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord, getUserProfile } from "@/firebase/firestore"
+import { saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
@@ -210,6 +210,7 @@ var closeIconHTML = \"&#9650;\"; // up arrow (collapse)
     var clickTag = urlParams.get("clickTag") || "";
 
     function exitClick(e) {
+      if (window.reportEvent) window.reportEvent('click');
       // Avoid redirecting when clicking controls (like expand/close buttons)
       if (e.target.closest('#dfpIconsContainer')) return;
     
@@ -268,6 +269,15 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
   const [placement, setPlacement] = useState(initialData?.placement ?? "Push_Expandable_970x250")
   const [targetElementId, setTargetElementId] = useState(initialData?.settings?.targetElementId ?? "")
 
+  const isAdmin = useMemo(() => {
+    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
+    return session?.user?.email && adminEmails.includes(session.user.email)
+  }, [session])
+
+  // Pricing & Budget
+  const [cpm, setCpm] = useState<number>(initialData?.cpm || 5.0)
+  const [budget, setBudget] = useState<number>(initialData?.budget || 100)
+
   // Params
   const [autoCloseSeconds, setAutoCloseSeconds] = useState(initialData?.settings?.autoClose ?? "8")
   const [createClickLayer, setCreateClickLayer] = useState(true)
@@ -304,7 +314,7 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
   const collapsedInputRef = useRef<HTMLInputElement | null>(null)
   const expandedInputRef = useRef<HTMLInputElement | null>(null)
 
-  const [availableSlots, setAvailableSlots] = useState<Array<{ id: string, name: string, format: string }>>([])
+  const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -315,6 +325,16 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
       })
     }
   }, [session])
+
+  // Auto-sync CPM based on slot price if selection changes
+  useEffect(() => {
+    if (targetElementId && targetElementId !== "none") {
+      const selectedSlot = availableSlots.find(s => s.id === targetElementId)
+      if (selectedSlot && selectedSlot.price) {
+        setCpm(selectedSlot.price)
+      }
+    }
+  }, [targetElementId, availableSlots])
 
   // Cleanup blob URLs to prevent memory leaks
   useEffect(() => {
@@ -571,7 +591,10 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
           expanded: newExpandedUrl
         },
         htmlUrl,
-        settings: manifest.settings
+        settings: manifest.settings,
+        cpm,
+        budget,
+        status: initialData?.status || "active"
       }, docId)
 
       // 6. Generate Embed Script
@@ -640,6 +663,33 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
               onChange={(e) => setPlacement(e.target.value)}
               placeholder="Ej: HP_970x250_expandable"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label>CPM ($) {!isAdmin && "(Modo Lectura)"}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={cpm}
+                onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                disabled={!isAdmin}
+                className={!isAdmin ? "bg-muted" : ""}
+              />
+              <p className="text-[10px] text-muted-foreground font-medium">
+                {isAdmin ? "Establece el costo por cada 1,000 impresiones." : "Costo definido por el administrador."}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Presupuesto Total ($)</Label>
+              <Input
+                type="number"
+                step="1"
+                value={budget}
+                onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+              />
+              <p className="text-[10px] text-muted-foreground font-medium">Presupuesto maximo para este anuncio.</p>
+            </div>
           </div>
 
           <div className="space-y-2">

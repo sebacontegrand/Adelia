@@ -15,6 +15,8 @@ import { Loader2, Save, Plus, Trash2, ExternalLink, Copy } from "lucide-react"
 import { ImageUpload } from "@/components/ui/image-upload"
 import Link from "next/link"
 import { useLanguage } from "@/app/context/language-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { adBuilderRegistry } from "@/components/ad-builder/registry"
 
 export default function MediaKitSettingsPage() {
     const { data: session, status } = useSession()
@@ -102,7 +104,8 @@ export default function MediaKitSettingsPage() {
     }
 
     const addSlot = () => {
-        setSlots([...slots, { id: Date.now().toString(), name: "New Slot", format: "Display Banner", price: 100 }])
+        const defaultFormat = adBuilderRegistry[0]?.id || "native-display"
+        setSlots([...slots, { id: Date.now().toString(), name: "New Slot", format: defaultFormat, price: 100 }])
     }
 
     const removeSlot = (id: string) => {
@@ -244,7 +247,18 @@ export default function MediaKitSettingsPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-xs text-slate-400">{t("media_kit.slot_format")}</Label>
-                                        <Input value={slot.format} onChange={e => updateSlot(slot.id, "format", e.target.value)} placeholder="e.g. Banner 728x90" className="bg-neutral-900 border-white/10 text-white" />
+                                        <Select value={slot.format} onValueChange={val => updateSlot(slot.id, "format", val)}>
+                                            <SelectTrigger className="bg-neutral-900 border-white/10 text-white">
+                                                <SelectValue placeholder="Select format" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-neutral-950 border-white/10 text-white">
+                                                {adBuilderRegistry.map((item) => (
+                                                    <SelectItem key={item.id} value={item.id}>
+                                                        {item.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-xs text-slate-400">{t("media_kit.slot_price")}</Label>

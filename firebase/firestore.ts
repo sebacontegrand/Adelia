@@ -11,6 +11,10 @@ export type AdRecord = {
     assets: Record<string, string>;
     htmlUrl?: string; // If we upload the index.html separately for direct embedding
     targetUrl?: string; // The destination URL when clicked
+    // Aggregated Counters
+    totalImpressions?: number;
+    totalViews?: number;
+    totalClicks?: number;
     settings: any;
     createdAt?: any;
     // Financials
@@ -91,6 +95,15 @@ export async function deleteAdRecord(adId: string) {
     }
 }
 
+export async function updateAdRecord(adId: string, data: Partial<AdRecord>) {
+    try {
+        await setDoc(doc(db, "ads", adId), data, { merge: true });
+        return true;
+    } catch (e) {
+        console.error("Error updating document: ", e);
+        throw e;
+    }
+}
 
 export async function getAdStats(adId: string, days = 7) {
     try {

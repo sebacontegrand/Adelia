@@ -10,12 +10,13 @@ import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Download, Save, Copy, Upload, X } from "lucide-react"
 import JSZip from "jszip"
-import { saveAdRecord, type AdRecord } from "@/firebase/firestore"
+import { saveAdRecord, type AdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
 import { uploadAdAsset } from "@/firebase/storage"
 import { doc, collection } from "firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { useSession } from "next-auth/react"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ScratchAdBuilderProps {
     initialData?: AdRecord
@@ -55,6 +56,10 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
     const [targetUrl, setTargetUrl] = useState(initialData?.targetUrl || "") // NEW: Clicktag URL
     const [scratchPercent, setScratchPercent] = useState<number>(50)
 
+    // Pricing & Budget
+    const [cpm, setCpm] = useState<number>(initialData?.cpm || 5.0)
+    const [budget, setBudget] = useState<number>(initialData?.budget || 100)
+
     // Media State
     const [coverSource, setCoverSource] = useState<SourceInfo | null>(null)
     const [coverUrl, setCoverUrl] = useState(initialData?.assets?.coverImage || "")
@@ -69,6 +74,12 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
     const [isWorking, setIsWorking] = useState(false)
     const [status, setStatus] = useState("")
     const [embedScript, setEmbedScript] = useState("")
+    const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
+
+    const isAdmin = useMemo(() => {
+        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
+        return session?.user?.email && adminEmails.includes(session.user.email)
+    }, [session])
 
     // Naming & Files
     const namingPrefix = useMemo(() => {
@@ -98,6 +109,26 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
         setBackSource({ file: f, bytes: f.size })
         setPreviewBackUrl(await fileToDataUrl(f))
     }
+
+    useEffect(() => {
+        if (session?.user?.email) {
+            getUserProfile(session.user.email).then(profile => {
+                if (profile?.availableSlots) {
+                    setAvailableSlots(profile.availableSlots)
+                }
+            })
+        }
+    }, [session])
+
+    // Price sync
+    useEffect(() => {
+        if (placement && placement !== "manual") {
+            const slot = availableSlots.find(s => s.id === placement)
+            if (slot && slot.price) {
+                setCpm(slot.price)
+            }
+        }
+    }, [placement, availableSlots])
 
     // Custom File Upload Component to match ImageUpload style but keep File access
     const FileUpload = ({
@@ -274,7 +305,7 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
     </style>
 </head>
 <body>
-    <a id="ad-link" href="${tUrl}" target="_blank">
+    <a id="ad-link" href="${tUrl}" target="_blank" onclick="if(window.reportEvent) window.reportEvent('click')">
         <div id="container">
             <canvas id="sCanvas" width="300" height="250"></canvas>
             <div id="cta" class="cta-overlay">Scratch to Reveal!</div>
@@ -431,7 +462,9 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
                 htmlUrl,
                 assets: { coverImage: finalCoverStr, backImage: finalBackStr },
                 settings: { scratchPercent },
-                status: "active"
+                cpm,
+                budget,
+                status: initialData?.status || "active"
             }, docId)
             console.log("Firestore saved!")
 
@@ -475,14 +508,10 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
         <div className="grid gap-8 lg:grid-cols-2">
             <div className="space-y-6">
                 <Card className="p-6 space-y-4 bg-card border-border">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>{t("builder.campaign_name") || "Campaign Name"}</Label>
                             <Input value={campaign} onChange={e => setCampaign(e.target.value)} placeholder="Summer Promo" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>{t("builder.slot_name") || "Placement Name"}</Label>
-                            <Input value={placement} onChange={e => setPlacement(e.target.value)} placeholder="Sidebar_300x250" />
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -493,6 +522,51 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
                             placeholder="https://example.com/landing-page"
                             type="url"
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Target Slot (Optional)</Label>
+                        <Select value={placement} onValueChange={setPlacement}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a slot..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="manual">-- Manual / Custom --</SelectItem>
+                                {availableSlots.map(slot => (
+                                    <SelectItem key={slot.id} value={slot.id}>
+                                        {slot.name} ({slot.format})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Select the slot where this ad will appear.</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-2">
+                            <Label>CPM ($) {!isAdmin && "(Read Only)"}</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={cpm}
+                                onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                                disabled={!isAdmin}
+                                className={!isAdmin ? "bg-muted" : ""}
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                                {isAdmin ? "Cost per 1,000 impressions." : "Price set by administrator."}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Total Budget ($)</Label>
+                            <Input
+                                type="number"
+                                step="1"
+                                value={budget}
+                                onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+                            />
+                            <p className="text-[10px] text-muted-foreground">Max spend for this ad.</p>
+                        </div>
                     </div>
 
                     <FileUpload
