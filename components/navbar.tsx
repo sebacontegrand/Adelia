@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Sparkles } from "lucide-react"
+import { Sparkles, ExternalLink } from "lucide-react"
 import { LanguageToggle } from "@/components/language-toggle"
 import { useLanguage } from "@/app/context/language-context"
 
@@ -80,6 +80,15 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link
+            href="https://adelia-tools.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400 border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 rounded-full transition-all hover:bg-purple-500/20 hover:border-purple-500/50 hover:text-purple-300"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {t("nav.adelia_tools")}
+          </Link>
           <LanguageToggle />
           {isAuthenticated ? (
             <>
