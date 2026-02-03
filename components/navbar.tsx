@@ -47,8 +47,8 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white shadow-[0_14px_40px_rgba(0,0,0,0.55)]">
-      {/* DESKTOP NAVBAR (Default VISIBLE, hides on mobile) */}
-      <div className="container mx-auto flex max-md:hidden h-28 items-center justify-between px-4">
+      {/* DESKTOP NAVBAR (Controlled by globals.css .nav-desktop) */}
+      <div className="container mx-auto nav-desktop h-28 items-center justify-between px-4">
         {logoAction === "signout" && isAuthenticated ? (
           <button type="button" onClick={handleSignOut} className="flex items-center gap-2">
             <img
@@ -111,8 +111,8 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
         </div>
       </div>
 
-      {/* MOBILE NAVBAR (Default VISIBLE, hides on desktop) */}
-      <div className="container mx-auto flex md:hidden h-20 items-center justify-between px-4">
+      {/* MOBILE NAVBAR (Controlled by globals.css .nav-mobile) */}
+      <div className="container mx-auto nav-mobile h-20 items-center justify-between px-4">
         {/* Left: Hamburger + Logo */}
         <div className="flex items-center gap-3">
           <Sheet>

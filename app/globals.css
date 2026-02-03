@@ -123,3 +123,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* HARDCODED NAVBAR VISIBILITY - BYPASS TAILWIND */
+.nav-desktop {
+  display: flex !important;
+}
+.nav-mobile {
+  display: flex !important;
+}
+
+@media (max-width: 767.98px) {
+  .nav-desktop {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .nav-mobile {
+    display: none !important;
+  }
+}
