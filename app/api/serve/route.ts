@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
                 const trackingCode = `
 <script>
 (function() {
+    var clickMacro = "%%CLICK_URL_UNESC%%";
     var adId = "${ad.id}";
     var trackUrl = "${origin}/api/track";
     var img = new Image();
@@ -54,7 +55,27 @@ export async function GET(req: NextRequest) {
                             <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Sponsored</div>
                             <h3 style="margin: 0 0 8px 0; font-size: 1.125rem; font-weight: 700; line-height: 1.4;">${s.headline}</h3>
                             <p style="margin: 0 0 16px 0; font-size: 0.875rem; color: #475569; line-height: 1.5;">${s.body}</p>
-                            <a href="${s.url}" target="_blank" rel="noopener noreferrer" onclick="if(window.reportEvent) window.reportEvent('click')" style="display: inline-block; background-color: #2563eb; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 0.875rem; font-weight: 500;">
+                            <a href="\${clickMacro}\${encodeURIComponent(s.url)}" target="_blank" rel="noopener noreferrer" onclick="if(window.reportEvent) window.reportEvent('click')" style="display: inline-block; background-color: #2563eb; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 0.875rem; font-weight: 500;">
+                                ${s.ctaText}
+                            </a>
+                        </div>
+                    </div>
+                    ${trackingCode}
+                    `;
+                } else if (ad.type === "native-video") {
+                    type = "native";
+                    const s = ad.settings;
+                    html = `
+                    <div style="font-family: inherit; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; color: inherit; display: flex; flex-direction: column; max-width: 100%;">
+                        ${s.videoUrl ? `
+                        <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000;">
+                            <video src="${s.videoUrl}" autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        </div>` : ""}
+                        <div style="padding: 16px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;">Sponsored Video</div>
+                            <h3 style="margin: 0 0 8px 0; font-size: 1.125rem; font-weight: 700; line-height: 1.4;">${s.headline}</h3>
+                            <p style="margin: 0 0 16px 0; font-size: 0.875rem; color: #475569; line-height: 1.5;">${s.body}</p>
+                            <a href="\${clickMacro}\${encodeURIComponent(s.url)}" target="_blank" rel="noopener noreferrer" onclick="if(window.reportEvent) window.reportEvent('click')" style="display: inline-block; background-color: #2563eb; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 0.875rem; font-weight: 500;">
                                 ${s.ctaText}
                             </a>
                         </div>

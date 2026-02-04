@@ -48,7 +48,14 @@ function generateSkinHtml(params: {
   <script>
     function handleClick() {
       if (window.reportEvent) window.reportEvent('click');
-      window.open("${params.clickTag}", "_blank");
+      var urlParams = new URLSearchParams(window.location.search);
+      var clickTag = urlParams.get("clickTag");
+      var landing = "${params.clickTag}";
+      if (clickTag) {
+        window.open(clickTag + encodeURIComponent(landing), "_blank");
+      } else {
+        window.open(landing, "_blank");
+      }
     }
   </script>
 </body>
@@ -142,16 +149,19 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
   style.innerHTML = 'body { background-image: url("${bgUrl}"); background-attachment: fixed; background-position: center top; background-size: cover; cursor: pointer; }';
   document.head.appendChild(style);
 
+  var clickMacro = "%%CLICK_URL_UNESC%%";
+
   // Click handler for body
   document.body.addEventListener('click', function(e) {
     if (e.target === document.body) {
-      window.open("${targetUrl}", "_blank");
+      window.open(clickMacro + encodeURIComponent("${targetUrl}"), "_blank");
     }
   });
 
   // Tracking iframe (invisible)
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
   var f = document.createElement("iframe");
-  f.src = "${htmlUrl}";
+  f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
   f.width = "1";
   f.height = "1";
   f.style.display = "none";

@@ -144,9 +144,12 @@ export function InterscrollerBuilder({ initialData }: { initialData?: any }) {
   container.style.position = 'relative';
   container.style.overflow = 'hidden';
   container.style.margin = '40px 0';
+
+  var clickMacro = "%%CLICK_URL_UNESC%%";
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
   
   var iframe = document.createElement('iframe');
-  iframe.src = "${htmlUrl}";
+  iframe.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = 'none';

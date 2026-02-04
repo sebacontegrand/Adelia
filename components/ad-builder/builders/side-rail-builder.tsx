@@ -154,7 +154,8 @@ export function SideRailBuilder({ initialData }: { initialData?: any }) {
     div.style.backgroundPosition = 'center';
     div.style.cursor = 'pointer';
     div.style.zIndex = '9999';
-    div.onclick = function() { window.open("${targetUrl}", "_blank"); };
+    var clickMacro = "%%CLICK_URL_UNESC%%";
+    div.onclick = function() { window.open(clickMacro + encodeURIComponent("${targetUrl}"), "_blank"); };
     document.body.appendChild(div);
   };
 
@@ -162,8 +163,10 @@ export function SideRailBuilder({ initialData }: { initialData?: any }) {
   if ("${side}" === "right" || "${side}" === "both") injectRail('right', "${railUrl}");
 
   // Tracking iframe
+  var clickMacro = "%%CLICK_URL_UNESC%%";
   var f = document.createElement("iframe");
-  f.src = "${htmlUrl}";
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
+  f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
   f.width = "1";
   f.height = "1";
   f.style.display = "none";

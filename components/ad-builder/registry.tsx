@@ -14,6 +14,7 @@ import { InterstitialBuilder } from "@/components/ad-builder/builders/interstiti
 import { SkinBuilder } from "@/components/ad-builder/builders/skin-builder"
 import { SideRailBuilder } from "@/components/ad-builder/builders/side-rail-builder"
 import { InterscrollerBuilder } from "@/components/ad-builder/builders/interscroller-builder"
+import { NativeVideoBuilder } from "@/components/ad-builder/builders/native-video-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -155,5 +156,16 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     image: "/previews/interscroller-layout.png",
     Builder: InterscrollerBuilder,
     helperText: "Una imagen inmersiva que se revela a traves de una ventana deslizante entre el contenido del sitio.",
+  },
+  {
+    id: "native-video",
+    title: "Native Video",
+    description: "Anuncio de video que se integra naturalmente en el feed. Mas impacto y engagement.",
+    dimensions: "16:9 recommended",
+    status: "live",
+    category: "mobile",
+    image: "/previews/native-video-layout.png",
+    Builder: NativeVideoBuilder,
+    helperText: "Sube un video en formato <strong>MP4</strong> o <strong>WebM</strong>. Se reproducira automaticamente en silencio (muted) para no interrumpir al usuario.",
   },
 ]

@@ -151,7 +151,14 @@ function generateInterstitialHtml(params: {
 
     function handleCta() {
       if (window.reportEvent) window.reportEvent('click');
-      window.open("${safeClickTag}", "_blank");
+      var urlParams = new URLSearchParams(window.location.search);
+      var clickTag = urlParams.get("clickTag");
+      var landing = "${safeClickTag}";
+      if (clickTag) {
+        window.open(clickTag + encodeURIComponent(landing), "_blank");
+      } else {
+        window.open(landing, "_blank");
+      }
       closeAd();
     }
 

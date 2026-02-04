@@ -136,9 +136,13 @@ function generateParallaxHtml(params: {
       bg.style.transform = 'translateY(' + offset + 'px)';
     });
 
+    var urlParams = new URLSearchParams(window.location.search);
+    var clickTag = urlParams.get("clickTag");
+
     adContainer.addEventListener('click', function() {
       if (window.reportEvent) window.reportEvent('click');
-      window.open(clickTag, '_blank');
+      var landing = clickTag ? clickTag + encodeURIComponent("${safeClickTag}") : "${safeClickTag}";
+      window.open(landing, '_blank');
     });
   </script>
 </body>

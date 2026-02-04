@@ -476,8 +476,10 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
   d.style.width = "300px";
   d.style.height = "250px"; 
   d.style.position = "relative";
+  var clickMacro = "%%CLICK_URL_UNESC%%";
+  var separator = "${htmlUrl}".includes("?") ? "&" : "?";
   var f = document.createElement("iframe");
-  f.src = "${htmlUrl}";
+  f.src = "${htmlUrl}" + separator + "clickTag=" + encodeURIComponent(clickMacro);
   f.width = "300";
   f.height = "250";
   f.style.border = "none";
