@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { Loader2, Upload, Save, Copy, Gamepad2, X, Plus } from "lucide-react"
+import { Loader2, Upload, Save, Copy, Gamepad2, X, Plus, Monitor, Smartphone } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
 import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
@@ -12,6 +12,7 @@ import { doc, collection } from "firebase/firestore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
@@ -172,6 +173,7 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
     const [isWorking, setIsWorking] = useState(false)
     const [status, setStatus] = useState("")
     const [embedScript, setEmbedScript] = useState("")
+    const [overlayMode, setOverlayMode] = useState(initialData?.settings?.overlayMode ?? false)
 
     const handleAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -270,7 +272,8 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
                 instruction,
                 url: targetUrl,
                 type: "mini-game-gated",
-                targetElementId: placement === "manual" ? manualTargetId : ""
+                targetElementId: placement === "manual" ? manualTargetId : "",
+                overlayMode
             }
 
             console.log("MiniGameBuilder: Saving record to Firestore...");
@@ -289,20 +292,39 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
             }, docId)
 
             const separator = htmlUrl.includes("?") ? "&" : "?";
-            const script = `<script>
+            const script = `
+<script>
 (function() {
   var adId = "${docId}";
   var clickMacro = "%%CLICK_URL_UNESC%%";
   var adUrl = "${htmlUrl}" + "${separator}" + "clickTag=" + encodeURIComponent(clickMacro);
+  var isOverlay = ${overlayMode};
   
   var container = document.createElement("div");
   container.id = "ad_gated_" + adId;
-  container.style.width = "100%";
-  container.style.maxWidth = "300px";
-  container.style.height = "400px";
-  container.style.margin = "30px auto";
-  container.style.position = "relative";
-  container.style.zIndex = "1000";
+  
+  if (isOverlay) {
+    // OVERLAY MODE: Fixed position takeover
+    container.style.position = "fixed";
+    container.style.inset = "0";
+    container.style.zIndex = "2147483647";
+    container.style.backgroundColor = "rgba(0,0,0,0.85)";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
+    container.style.justifyContent = "center";
+    
+    // LOCK SCROLL
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  } else {
+    // INLINE MODE: Existing behavior
+    container.style.width = "100%";
+    container.style.maxWidth = "300px";
+    container.style.height = "400px";
+    container.style.margin = "30px auto";
+    container.style.position = "relative";
+    container.style.zIndex = "1000";
+  }
 
   var iframe = document.createElement("iframe");
   iframe.src = adUrl;
@@ -312,45 +334,54 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
   iframe.style.display = "block";
   iframe.style.margin = "0 auto";
   iframe.scrolling = "no";
+  iframe.style.borderRadius = "8px";
+  iframe.style.boxShadow = "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)";
   
   container.appendChild(iframe);
   
-  // Content Gating Logic
-  var currentScript = document.currentScript;
-  var parent = currentScript.parentNode;
-  var nextElements = [];
-  var sibling = currentScript.nextSibling;
-  
-  // Create wrapper for Gated Content
-  var wrapper = document.createElement("div");
-  wrapper.id = "gated_content_" + adId;
-  wrapper.style.transition = "filter 0.8s ease, opacity 0.8s ease";
-  wrapper.style.filter = "blur(8px)";
-  wrapper.style.opacity = "0.4";
-  wrapper.style.pointerEvents = "none";
-  wrapper.style.userSelect = "none";
+  // Logic based on mode
+  if (!isOverlay) {
+    var currentScript = document.currentScript;
+    var parent = currentScript.parentNode;
+    var nextElements = [];
+    var sibling = currentScript.nextSibling;
+    
+    var wrapper = document.createElement("div");
+    wrapper.id = "gated_content_" + adId;
+    wrapper.style.transition = "filter 0.8s ease, opacity 0.8s ease";
+    wrapper.style.filter = "blur(8px)";
+    wrapper.style.opacity = "0.4";
+    wrapper.style.pointerEvents = "none";
+    wrapper.style.userSelect = "none";
 
-  // Collect all siblings after the script
-  while (sibling) {
-      nextElements.push(sibling);
-      sibling = sibling.nextSibling;
+    while (sibling) {
+        nextElements.push(sibling);
+        sibling = sibling.nextSibling;
+    }
+    nextElements.forEach(function(el) { wrapper.appendChild(el); });
+    
+    parent.insertBefore(container, null);
+    parent.appendChild(wrapper);
+  } else {
+    document.body.appendChild(container);
   }
-  
-  // Move them into wrapper
-  nextElements.forEach(function(el) {
-      wrapper.appendChild(el);
-  });
-  
-  parent.insertBefore(container, null);
-  parent.appendChild(wrapper);
 
   // Listen for unlock
   window.addEventListener("message", function(e) {
       if (e.data && e.data.m === "adelia" && e.data.a === "unlock_game_content") {
-          wrapper.style.filter = "none";
-          wrapper.style.opacity = "1";
-          wrapper.style.pointerEvents = "auto";
-          wrapper.style.userSelect = "auto";
+          if (!isOverlay) {
+              var wrapper = document.getElementById("gated_content_" + adId);
+              if (wrapper) {
+                wrapper.style.filter = "none";
+                wrapper.style.opacity = "1";
+                wrapper.style.pointerEvents = "auto";
+                wrapper.style.userSelect = "auto";
+              }
+          } else {
+              // RESTORE SCROLL
+              document.body.style.overflow = '';
+              document.documentElement.style.overflow = '';
+          }
           
           setTimeout(() => {
              container.style.transition = "opacity 0.5s ease";
@@ -425,6 +456,26 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
                         <div className="space-y-2">
                             <Label>Target URL (Game End)</Label>
                             <Input value={targetUrl} onChange={e => setTargetUrl(e.target.value)} placeholder="https://..." />
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center justify-between p-3 rounded-lg border bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                    <Label className="text-sm font-bold flex items-center gap-2">
+                                        {overlayMode ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                                        {overlayMode ? "Overlay Mode (Desktop Focus)" : "Inline Mode (Mobile Focus)"}
+                                    </Label>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {overlayMode
+                                            ? "Stops scrolling and centers the game on screen (Takeover)."
+                                            : "Blurs content below the ad container inline."}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={overlayMode}
+                                    onCheckedChange={setOverlayMode}
+                                />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
