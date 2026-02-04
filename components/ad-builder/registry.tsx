@@ -15,6 +15,7 @@ import { SkinBuilder } from "@/components/ad-builder/builders/skin-builder"
 import { SideRailBuilder } from "@/components/ad-builder/builders/side-rail-builder"
 import { InterscrollerBuilder } from "@/components/ad-builder/builders/interscroller-builder"
 import { NativeVideoBuilder } from "@/components/ad-builder/builders/native-video-builder"
+import { MiniGameBuilder } from "@/components/ad-builder/builders/mini-game-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -167,5 +168,16 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     image: "/previews/native-video-layout.png",
     Builder: NativeVideoBuilder,
     helperText: "Sube un video en formato <strong>MP4</strong> o <strong>WebM</strong>. Se reproducira automaticamente en silencio (muted) para no interrumpir al usuario.",
+  },
+  {
+    id: "mini-game-gated",
+    title: "Gated Mini-Game",
+    description: "Bloquea el contenido del articulo hasta que el usuario resuelva un mini-juego.",
+    dimensions: "300x400 (Gate)",
+    status: "live",
+    category: "mobile",
+    image: "/previews/gated-game-layout.png",
+    Builder: MiniGameBuilder,
+    helperText: "Sube 3 iconos para crear un juego de memoria. El script inyectado <strong>difuminara automaticamente</strong> todo el contenido que siga al anuncio hasta que se complete el juego.",
   },
 ]

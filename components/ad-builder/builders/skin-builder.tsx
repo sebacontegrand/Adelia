@@ -249,7 +249,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                             </Button>
                         </div>
                         <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-background"
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50"
                             readOnly
                             value={embedScript}
                         />

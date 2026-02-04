@@ -419,7 +419,7 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
                             Copy and paste this script into your website to embed the ad.
                         </p>
                         <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-background focus:ring-2 focus:ring-emerald-500"
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
                             readOnly
                             value={embedScript}
                         />

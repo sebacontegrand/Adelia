@@ -21,6 +21,7 @@ export type AdRecord = {
     budget?: number;
     cpm?: number;
     status?: 'active' | 'paused' | 'completed';
+    events?: Record<string, number>;
 };
 
 export async function saveAdRecord(adData: AdRecord, customId?: string) {

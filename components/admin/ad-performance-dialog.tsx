@@ -46,6 +46,7 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                     date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                     impressions: s.impressions || 0,
                     clicks: s.clicks || 0,
+                    solves: s.events?.solve || 0,
                     revenue: Number(((s.impressions || 0) / 1000 * (editCpm)).toFixed(2))
                 }
             })
@@ -75,8 +76,10 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
     const data = performanceData
     const totalImpressions = ad.totalImpressions || 0
     const totalClicks = ad.totalClicks || 0
+    const totalSolves = ad.events?.solve || 0
     const totalRevenue = (totalImpressions / 1000) * (ad.cpm || 5)
     const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00"
+    const engagementRate = totalImpressions > 0 ? ((totalSolves / totalImpressions) * 100).toFixed(2) : "0.00"
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -127,11 +130,18 @@ export function AdPerformanceDialog({ ad }: AdPerformanceDialogProps) {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t("dialog.ctr")}</CardTitle>
+                            <CardTitle className="text-sm font-medium">
+                                {ad.type === "mini-game-gated" ? "Completion Rate" : t("dialog.ctr")}
+                            </CardTitle>
                             <Activity className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{ctr}%</div>
+                            <div className="text-2xl font-bold">
+                                {ad.type === "mini-game-gated" ? `${engagementRate}%` : `${ctr}%`}
+                            </div>
+                            {ad.type === "mini-game-gated" && (
+                                <p className="text-[10px] text-muted-foreground">{totalSolves} Solves</p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

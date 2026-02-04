@@ -135,7 +135,16 @@ export default function AdminPage() {
                                         {ads.map((ad) => (
                                             <TableRow key={ad.id}>
                                                 <TableCell className="font-medium">{ad.campaign}</TableCell>
-                                                <TableCell><span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">{ad.type || t("display")}</span></TableCell>
+                                                <TableCell>
+                                                    <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">
+                                                        {ad.type === "mini-game-gated" ? "Gated Mini-Game" :
+                                                            ad.type === "native-video" ? "Native Video" :
+                                                                ad.type === "push-expandable" ? "Push Expandable" :
+                                                                    ad.type === "side-rail" ? "Side Rail" :
+                                                                        ad.type === "interscroller-ad" ? "Interscroller" :
+                                                                            ad.type || t("display")}
+                                                    </span>
+                                                </TableCell>
                                                 <TableCell>{ad.userId}</TableCell>
                                                 <TableCell>
                                                     <span className={`px-2 py-1 rounded text-xs ${ad.status === 'active' ? 'bg-green-100 text-green-700' :

@@ -49,7 +49,15 @@ function generateInterscrollerHtml(params: {
   <script>
     function handleClick() {
       if (window.reportEvent) window.reportEvent('click');
-      window.open("${params.clickTag}", "_blank");
+      var landing = "${params.clickTag}";
+      var urlParams = new URLSearchParams(window.location.search);
+      var clickTag = urlParams.get("clickTag");
+      
+      if (clickTag) {
+        window.open(clickTag + encodeURIComponent(landing), "_blank");
+      } else {
+        window.open(landing, "_blank");
+      }
     }
   </script>
 </body>
@@ -241,7 +249,7 @@ export function InterscrollerBuilder({ initialData }: { initialData?: any }) {
                             </Button>
                         </div>
                         <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-background"
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50"
                             readOnly
                             value={embedScript}
                         />
