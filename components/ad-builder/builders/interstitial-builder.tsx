@@ -14,9 +14,10 @@ import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { Upload, Download, Image as ImageIcon, Save, X, Timer, Copy } from "lucide-react"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
+import { SlotSelector } from "@/components/ad-builder/slot-selector"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
+import { saveAdRecord } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 
@@ -190,6 +191,8 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
     const [isWorking, setIsWorking] = useState(false)
     const [status, setStatus] = useState("")
     const [embedScript, setEmbedScript] = useState("")
+    const [cpm, setCpm] = useState<number>(initialData?.cpm ?? 15.0)
+    const [budget, setBudget] = useState<number>(initialData?.budget ?? 1000)
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "background" | "logo") => {
         const file = e.target.files?.[0]
@@ -265,8 +268,8 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
                 htmlUrl,
                 settings: { headline, body, ctaText, url: targetUrl, autoClose: autoCloseSecs, showTimer },
                 status: "active",
-                cpm: 15.0,
-                budget: 1000
+                cpm,
+                budget
             }, docId)
 
             // Generate Embed Script
@@ -312,6 +315,35 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
                         <div className="space-y-2">
                             <Label>Campaign Name</Label>
                             <Input value={campaign} onChange={e => setCampaign(e.target.value)} />
+                        </div>
+
+                        <SlotSelector
+                            value={placement}
+                            onChange={(val, price) => {
+                                setPlacement(val)
+                                if (price) setCpm(price)
+                            }}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>CPM ($)</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={cpm}
+                                    onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Total Budget ($)</Label>
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    value={budget}
+                                    onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label>Headline</Label>

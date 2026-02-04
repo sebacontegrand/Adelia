@@ -15,10 +15,11 @@ import { useToast } from "@/hooks/use-toast"
 import { Upload, Download, Image as ImageIcon, Save, X, Copy } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
+import { saveAdRecord } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
+import { SlotSelector } from "@/components/ad-builder/slot-selector"
 
 function escapeHtmlAttr(value: string) {
     return value.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -163,22 +164,10 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
     const [isWorking, setIsWorking] = useState(false)
     const [status, setStatus] = useState("")
     const [embedScript, setEmbedScript] = useState("")
+    const [cpm, setCpm] = useState<number>(initialData?.cpm ?? 8.0)
+    const [budget, setBudget] = useState<number>(initialData?.budget ?? 500)
 
-    const isAdmin = useMemo(() => {
-        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
-        return session?.user?.email && adminEmails.includes(session.user.email)
-    }, [session])
-
-    const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
-    const [targetSlot, setTargetSlot] = useState(initialData?.placement ?? "")
-
-    useEffect(() => {
-        if (session?.user?.email) {
-            getUserProfile(session.user.email).then(profile => {
-                if (profile?.availableSlots) setAvailableSlots(profile.availableSlots)
-            })
-        }
-    }, [session])
+    // isAdmin and slots loading are handled by SlotSelector or locally if needed
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "background" | "content") => {
         const file = e.target.files?.[0]
@@ -248,14 +237,14 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
             await saveAdRecord({
                 userId,
                 campaign,
-                placement: targetSlot || placement,
+                placement,
                 type: "parallax-banner",
                 assets: { background: bgUrl, content: contentUrl },
                 htmlUrl,
                 settings: { headline, ctaText, url: targetUrl, parallaxSpeed },
                 status: "active",
-                cpm: 8.0,
-                budget: 500
+                cpm,
+                budget
             }, docId)
 
             // Generate Embed Script
@@ -302,6 +291,35 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
                         <div className="space-y-2">
                             <Label>Campaign Name</Label>
                             <Input value={campaign} onChange={e => setCampaign(e.target.value)} />
+                        </div>
+
+                        <SlotSelector
+                            value={placement}
+                            onChange={(val, price) => {
+                                setPlacement(val)
+                                if (price) setCpm(price)
+                            }}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>CPM ($)</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={cpm}
+                                    onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Total Budget ($)</Label>
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    value={budget}
+                                    onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label>Headline</Label>

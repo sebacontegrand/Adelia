@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { Loader2, Upload, Save, Image as ImageIcon, Copy, X } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { type AdRecord, saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/firestore"
+import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { useMemo } from "react"
@@ -15,8 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { SlotSelector } from "@/components/ad-builder/slot-selector"
 
 export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?: string } }) {
     const { toast } = useToast()
@@ -39,38 +40,11 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
     const [cpm, setCpm] = useState<number>(initialData?.cpm || 5.0)
     const [budget, setBudget] = useState<number>(initialData?.budget || 100)
 
-    const [availableSlots, setAvailableSlots] = useState<UserProfile["availableSlots"]>([])
-
-    const isAdmin = useMemo(() => {
-        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",")
-        return session?.user?.email && adminEmails.includes(session.user.email)
-    }, [session])
     const [isWorking, setIsWorking] = useState(false)
 
     // Output Dialog
     const [showCodeDialog, setShowCodeDialog] = useState(false)
     const [generatedCode, setGeneratedCode] = useState("")
-
-    // Load Slots
-    useEffect(() => {
-        if (session?.user?.email) {
-            getUserProfile(session.user.email).then(profile => {
-                if (profile?.availableSlots) {
-                    setAvailableSlots(profile.availableSlots)
-                }
-            })
-        }
-    }, [session])
-
-    // Price sync
-    useEffect(() => {
-        if (placement && placement !== "manual") {
-            const slot = availableSlots.find(s => s.id === placement)
-            if (slot && slot.price) {
-                setCpm(slot.price)
-            }
-        }
-    }, [placement, availableSlots])
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -238,23 +212,13 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                             <Input value={campaign} onChange={e => setCampaign(e.target.value)} placeholder="e.g. Summer Sale 2026" />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Target Slot</Label>
-                            <Select value={placement} onValueChange={setPlacement}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a slot..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="manual">-- Manual / Custom ID --</SelectItem>
-                                    {availableSlots.map(slot => (
-                                        <SelectItem key={slot.id} value={slot.id}>
-                                            {slot.name} ({slot.format})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">Select where this ad should appear on the publisher's site.</p>
-                        </div>
+                        <SlotSelector
+                            value={placement}
+                            onChange={(val, price) => {
+                                setPlacement(val)
+                                if (price) setCpm(price)
+                            }}
+                        />
 
                         {placement === "manual" && (
                             <div className="space-y-2 p-4 bg-muted/50 rounded-md border text-sm">
@@ -272,18 +236,13 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
 
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                             <div className="space-y-2">
-                                <Label>CPM ($) {!isAdmin && "(Read Only)"}</Label>
+                                <Label>CPM ($)</Label>
                                 <Input
                                     type="number"
                                     step="0.01"
                                     value={cpm}
                                     onChange={e => setCpm(parseFloat(e.target.value) || 0)}
-                                    disabled={!isAdmin}
-                                    className={!isAdmin ? "bg-muted" : ""}
                                 />
-                                <p className="text-[10px] text-muted-foreground">
-                                    {isAdmin ? "Cost per 1,000 impressions." : "Price set by administrator."}
-                                </p>
                             </div>
                             <div className="space-y-2">
                                 <Label>Total Budget ($)</Label>
@@ -293,7 +252,6 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                                     value={budget}
                                     onChange={e => setBudget(parseFloat(e.target.value) || 0)}
                                 />
-                                <p className="text-[10px] text-muted-foreground font-medium">Maximum spend for this ad.</p>
                             </div>
                         </div>
 

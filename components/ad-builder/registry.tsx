@@ -11,6 +11,9 @@ import { NativeBuilder } from "@/components/ad-builder/builders/native-builder"
 import { ScratchAdBuilder } from "@/components/ad-builder/builders/scratch-ad-builder"
 import { ParallaxBuilder } from "@/components/ad-builder/builders/parallax-builder"
 import { InterstitialBuilder } from "@/components/ad-builder/builders/interstitial-builder"
+import { SkinBuilder } from "@/components/ad-builder/builders/skin-builder"
+import { SideRailBuilder } from "@/components/ad-builder/builders/side-rail-builder"
+import { InterscrollerBuilder } from "@/components/ad-builder/builders/interscroller-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -119,5 +122,38 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     Builder: InterstitialBuilder,
     helperText:
       "Configura una experiencia de pantalla completa. Incluye <strong>Fondo</strong>, <strong>Logo</strong>, <strong>Headline</strong> y un temporizador de autocierre para no afectar la UX.",
+  },
+  {
+    id: "desktop-skin",
+    title: "Desktop Wallpaper (Skin)",
+    description: "Premium wallpaper that surrounds the site content.",
+    dimensions: "Full Width",
+    status: "live",
+    category: "desktop",
+    image: "/desktop-billboard-ad.jpg",
+    Builder: SkinBuilder,
+    helperText: "Un wallpaper premium que envuelve el contenido del sitio. Ideal para branding de alto impacto en Desktop.",
+  },
+  {
+    id: "side-rail",
+    title: "Side-Rail Takeover",
+    description: "Sticky vertical banners in the site's gutters.",
+    dimensions: "160x1050",
+    status: "live",
+    category: "desktop",
+    image: "/desktop-billboard-ad.jpg",
+    Builder: SideRailBuilder,
+    helperText: "Banners verticales pegajosos que siguen el scroll a los costados del contenido. Selecciona izquierda, derecha o ambos.",
+  },
+  {
+    id: "interscroller-desktop",
+    title: "Scroll-Reveal (Interscroller)",
+    description: "Immersive image revealed through a sliding window.",
+    dimensions: "Full View",
+    status: "live",
+    category: "desktop",
+    image: "/desktop-billboard-ad.jpg",
+    Builder: InterscrollerBuilder,
+    helperText: "Una imagen inmersiva que se revela a traves de una ventana deslizante entre el contenido del sitio.",
   },
 ]
