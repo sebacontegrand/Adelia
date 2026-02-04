@@ -34,7 +34,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "970x90, 970x250",
     status: "live",
     category: "desktop",
-    image: "/desktop-billboard-ad.jpg",
+    image: "/previews/billboard-layout.png",
     Builder: PushExpandableBuilder,
     helperText:
       "Subi las creatividades <strong>collapsed</strong> y <strong>expanded</strong> (de cualquier tamano). El builder genera automaticamente los PNG exactos de <strong>970x90</strong> y <strong>970x250</strong>, muestra una previsualizacion del recorte y exporta un ZIP con <strong>index.html</strong> + <strong>manifest</strong>.",
@@ -46,7 +46,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "300x250",
     status: "live",
     category: "desktop", // Could be mobile too, but listing generally
-    image: "/desktop-medium-rectangle-ad.jpg",
+    image: "/previews/mrec-layout.png",
     Builder: Puzzle300Builder,
     helperText:
       "Subi el <strong>background</strong> (archivo o URL) y el <strong>logo</strong>. Completa los textos y genera el ZIP con <strong>index.html</strong> + <strong>manifest</strong> + assets.",
@@ -58,7 +58,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "300x250",
     status: "live",
     category: "desktop",
-    image: "/desktop-medium-rectangle-ad.jpg",
+    image: "/previews/colorad-layout.png",
     Builder: ColorAdBuilder,
     helperText:
       "Subi el <strong>logo</strong>, la imagen en <strong>ByN</strong> y la imagen a <strong>color</strong>. Defini el color principal y la URL destino. Exporta un ZIP con HTML, assets y manifest.",
@@ -70,7 +70,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "300x250",
     status: "live",
     category: "desktop",
-    image: "/desktop-medium-rectangle-ad.jpg",
+    image: "/previews/podcastwith-layout.png",
     Builder: PodcastwithBuilder,
     helperText:
       "Subi el <strong>logo</strong> y el <strong>audio</strong>, suma el background (URL) y textos editables. Exporta un ZIP con HTML, assets y manifest.",
@@ -82,7 +82,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "Responsive",
     status: "live",
     category: "mobile", // Fits well for mobile feeds
-    image: "/mobile-large-banner-ad.jpg",
+    image: "/previews/native-layout.png",
     Builder: NativeBuilder,
     helperText:
       "Completa el <strong>titulo</strong>, <strong>cuerpo</strong> e <strong>imagen</strong>. Este anuncio <strong>no usa Iframe</strong>, se inyecta directamente en la pagina para heredar las fuentes y estilos del sitio web.",
@@ -94,7 +94,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "300x250",
     status: "live",
     category: "desktop", // Works on mobile too
-    image: "/desktop-medium-rectangle-ad.jpg", // Placeholder until we have a specific one
+    image: "/previews/scratchoff-layout.png",
     Builder: ScratchAdBuilder,
     helperText:
       "Subi la <strong>Cover Image</strong> (lo que se raspa) y la <strong>Back Image</strong> (lo que se revela). El usuario interactuara arrastrando el mouse o el dedo. Exporta un ZIP con HTML Canvas logic.",
@@ -106,7 +106,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "970x250",
     status: "live",
     category: "desktop",
-    image: "/desktop-billboard-ad.jpg",
+    image: "/previews/billboard-layout.png",
     Builder: ParallaxBuilder,
     helperText:
       "Subi un <strong>Fondo</strong> (que se movera mas lento) y opcionalmente un <strong>Logo/Overlay</strong>. El efecto parallax se activa automaticamente al hacer scroll.",
@@ -118,7 +118,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "Fullscreen",
     status: "live",
     category: "mobile",
-    image: "/mobile-interstitial-ad.jpg",
+    image: "/previews/interstitial-layout.png",
     Builder: InterstitialBuilder,
     helperText:
       "Configura una experiencia de pantalla completa. Incluye <strong>Fondo</strong>, <strong>Logo</strong>, <strong>Headline</strong> y un temporizador de autocierre para no afectar la UX.",
@@ -130,7 +130,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "Full Width",
     status: "live",
     category: "desktop",
-    image: "/desktop-billboard-ad.jpg",
+    image: "/previews/skin-layout.png",
     Builder: SkinBuilder,
     helperText: "Un wallpaper premium que envuelve el contenido del sitio. Ideal para branding de alto impacto en Desktop.",
   },
@@ -141,7 +141,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "160x1050",
     status: "live",
     category: "desktop",
-    image: "/desktop-billboard-ad.jpg",
+    image: "/previews/skin-layout.png",
     Builder: SideRailBuilder,
     helperText: "Banners verticales pegajosos que siguen el scroll a los costados del contenido. Selecciona izquierda, derecha o ambos.",
   },
@@ -152,7 +152,7 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     dimensions: "Full View",
     status: "live",
     category: "desktop",
-    image: "/desktop-billboard-ad.jpg",
+    image: "/previews/interscroller-layout.png",
     Builder: InterscrollerBuilder,
     helperText: "Una imagen inmersiva que se revela a traves de una ventana deslizante entre el contenido del sitio.",
   },
