@@ -132,14 +132,20 @@ export default function AdBuilderPage() {
             </Button>
           </div>
 
-          <h1 className="mb-3 text-4xl font-bold">{t("builder.title")}</h1>
+          <h1 className="mb-3 text-4xl font-bold">
+            {viewMode === "saved" ? t("builder.saved_ads") : viewMode === "lookup" ? t("builder.lookup") : t("builder.title")}
+          </h1>
           {viewMode === "create" && selectedAdTypeEntry?.helperText ? (
             <div className="mx-auto max-w-6xl">
               <p
-                className="text-emerald-400"
+                className="text-emerald-400 text-sm"
                 dangerouslySetInnerHTML={{ __html: selectedAdTypeEntry.helperText }}
               />
             </div>
+          ) : viewMode === "create" ? (
+            <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+              {t("builder.choose_type")}
+            </p>
           ) : null}
         </div>
 
@@ -148,37 +154,51 @@ export default function AdBuilderPage() {
         ) : viewMode === "lookup" ? (
           <AdLookup onSelectTemplate={handleSelectTemplate} />
         ) : (
-          <>
-            <div className="mb-12 space-y-6">
-              <div className="text-center">
-                <h2 className="mb-2 text-2xl font-bold">
-                  {initialData ? t("builder.editing_saved") : t("builder.choose_type")}
-                </h2>
-                {!initialData && (
-                  <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-                    {t("builder.available_formats")}
-                  </p>
-                )}
-              </div>
-              <AdTypeSelector options={adBuilderRegistry} selectedId={selectedAdType} onSelect={(id) => { setSelectedAdType(id); setInitialData(undefined); }} />
-            </div>
-
-            {!selectedAdType ? (
-              // No selection state
-              <div className="mx-auto max-w-2xl text-center p-8 text-muted-foreground">
-                <p>{t("builder.select_format_prompt")}</p>
-              </div>
-            ) : BuilderComponent ? (
-              <BuilderComponent key={`${selectedAdType}-${(initialData as any)?.id || "new"}`} initialData={initialData} />
-            ) : (
-              <Card className="border-border bg-card p-8">
-                <h3 className="mb-2 text-xl font-semibold">{t("builder.coming_soon")}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("builder.coming_soon_desc")}
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Sidebar Column: 4/12 (~1/3) */}
+            <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+              <Card className="border-border bg-card p-6 shadow-sm overflow-hidden">
+                <div className="mb-4">
+                  <h3 className="font-bold text-lg mb-1">{t("builder.available_formats")}</h3>
+                  <p className="text-xs text-muted-foreground">Select a creative style to start building.</p>
+                </div>
+                <div className="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <AdTypeSelector
+                    variant="sidebar"
+                    options={adBuilderRegistry}
+                    selectedId={selectedAdType}
+                    onSelect={(id) => { setSelectedAdType(id); setInitialData(undefined); }}
+                  />
+                </div>
               </Card>
-            )}
-          </>
+            </aside>
+
+            {/* Main Column: 8/12 (~2/3) */}
+            <div className="lg:col-span-8 space-y-8">
+              {!selectedAdType ? (
+                <Card className="flex flex-col items-center justify-center p-20 text-center border-dashed border-2 bg-muted/20">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Plus className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{t("builder.select_format_prompt")}</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Choose one of the specialized ad formats from the left sidebar to begin your creative journey.
+                  </p>
+                </Card>
+              ) : BuilderComponent ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <BuilderComponent key={`${selectedAdType}-${(initialData as any)?.id || "new"}`} initialData={initialData} />
+                </div>
+              ) : (
+                <Card className="border-border bg-card p-12 text-center">
+                  <h3 className="mb-2 text-2xl font-semibold">{t("builder.coming_soon")}</h3>
+                  <p className="text-muted-foreground">
+                    {t("builder.coming_soon_desc")}
+                  </p>
+                </Card>
+              )}
+            </div>
+          </div>
         )}
       </main>
     </div>
