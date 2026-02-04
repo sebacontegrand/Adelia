@@ -7,7 +7,7 @@ export type AdRecord = {
     campaign: string;
     placement: string;
     type: string; // e.g., 'push-expandable'
-    zipUrl: string;
+    zipUrl?: string;
     assets: Record<string, string>;
     htmlUrl?: string; // If we upload the index.html separately for direct embedding
     targetUrl?: string; // The destination URL when clicked

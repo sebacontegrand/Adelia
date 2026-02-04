@@ -9,6 +9,8 @@ import { ColorAdBuilder } from "@/components/ad-builder/builders/colorad-builder
 import { PodcastwithBuilder } from "@/components/ad-builder/builders/podcastwith-builder"
 import { NativeBuilder } from "@/components/ad-builder/builders/native-builder"
 import { ScratchAdBuilder } from "@/components/ad-builder/builders/scratch-ad-builder"
+import { ParallaxBuilder } from "@/components/ad-builder/builders/parallax-builder"
+import { InterstitialBuilder } from "@/components/ad-builder/builders/interstitial-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -93,5 +95,29 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     Builder: ScratchAdBuilder,
     helperText:
       "Subi la <strong>Cover Image</strong> (lo que se raspa) y la <strong>Back Image</strong> (lo que se revela). El usuario interactuara arrastrando el mouse o el dedo. Exporta un ZIP con HTML Canvas logic.",
+  },
+  {
+    id: "parallax-banner",
+    title: "Parallax Billboard",
+    description: "Anuncio de gran impacto con efecto de profundidad al hacer scroll.",
+    dimensions: "970x250",
+    status: "live",
+    category: "desktop",
+    image: "/desktop-billboard-ad.jpg",
+    Builder: ParallaxBuilder,
+    helperText:
+      "Subi un <strong>Fondo</strong> (que se movera mas lento) y opcionalmente un <strong>Logo/Overlay</strong>. El efecto parallax se activa automaticamente al hacer scroll.",
+  },
+  {
+    id: "interstitial-full",
+    title: "Interstitial Full-Page",
+    description: "Anuncio a pantalla completa altamente impactante con temporizador.",
+    dimensions: "Fullscreen",
+    status: "live",
+    category: "mobile",
+    image: "/mobile-interstitial-ad.jpg",
+    Builder: InterstitialBuilder,
+    helperText:
+      "Configura una experiencia de pantalla completa. Incluye <strong>Fondo</strong>, <strong>Logo</strong>, <strong>Headline</strong> y un temporizador de autocierre para no afectar la UX.",
   },
 ]

@@ -130,6 +130,8 @@ const translations = {
         "builder.select_format_prompt": "Select a format from the list to start creating your ad.",
         "builder.coming_soon": "Builder coming soon",
         "builder.coming_soon_desc": "The builder for this format is not available yet.",
+        "builder.lookup": "Creative Discovery",
+        "builder.lookup_desc": "Find inspiration and use high-impact templates for your next campaign.",
         // Scratch Builder
         "builder.campaign_name": "Campaign Name",
         "builder.cover_image": "Cover Image (Scratch Layer)",
@@ -255,6 +257,8 @@ const translations = {
         "builder.select_format_prompt": "Selecciona un formato de la lista para comenzar a crear tu anuncio.",
         "builder.coming_soon": "Builder en camino",
         "builder.coming_soon_desc": "Todavía no está disponible el builder para este formato.",
+        "builder.lookup": "Descubrir Creatividades",
+        "builder.lookup_desc": "Encontrá inspiración y usá plantillas de alto impacto para tu próxima campaña.",
         // Scratch Builder
         "builder.campaign_name": "Nombre de Campaña",
         "builder.cover_image": "Imagen de Cubierta (Capa para raspar)",

@@ -124,7 +124,7 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
             <SheetContent side="left" className="bg-black border-white/10 text-white w-[280px] p-0">
               <SheetHeader className="p-6 border-b border-white/10 text-left">
                 <SheetTitle className="text-white flex items-center gap-2">
-                  <img src="/adelia%20(4).png" alt="Adelia" className="h-8 object-contain" />
+                  <img src="/adelia%20(4).png" alt="Adelia" className="h-12 object-contain" />
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col py-4">
@@ -163,11 +163,11 @@ export function Navbar({ onSignOut, logoAction = "home" }: NavbarProps) {
           {/* Mobile Logo with logic */}
           {logoAction === "signout" && isAuthenticated ? (
             <button type="button" onClick={handleSignOut} className="flex items-center">
-              <img src="/adelia%20(4).png" alt="Adelia" className="h-10 w-auto object-contain" />
+              <img src="/adelia%20(4).png" alt="Adelia" className="h-20 w-auto object-contain" />
             </button>
           ) : (
             <Link href="/" className="flex items-center">
-              <img src="/adelia%20(4).png" alt="Adelia" className="h-10 w-auto object-contain" />
+              <img src="/adelia%20(4).png" alt="Adelia" className="h-20 w-auto object-contain" />
             </Link>
           )}
         </div>

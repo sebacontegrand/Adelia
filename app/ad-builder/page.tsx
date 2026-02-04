@@ -10,8 +10,9 @@ import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SavedAdsList } from "@/components/ad-builder/saved-ads-list"
+import { AdLookup } from "@/components/ad-builder/ad-lookup"
 import { type AdRecord } from "@/firebase/firestore"
-import { Plus, LayoutGrid } from "lucide-react"
+import { Plus, LayoutGrid, Search } from "lucide-react"
 import { useLanguage } from "@/app/context/language-context"
 
 export default function AdBuilderPage() {
@@ -22,7 +23,7 @@ export default function AdBuilderPage() {
   const isLoading = status === "loading"
 
   // State
-  const [viewMode, setViewMode] = useState<"create" | "saved">("create")
+  const [viewMode, setViewMode] = useState<"create" | "saved" | "lookup">("create")
   // We keep track of "initialData" to hydrate the builder if editing/viewing a saved ad
   const [initialData, setInitialData] = useState<AdRecord | undefined>(undefined)
 
@@ -55,6 +56,13 @@ export default function AdBuilderPage() {
 
   const handleSignIn = () => {
     signIn("google")
+  }
+
+  const handleSelectTemplate = (adType: string, data?: any) => {
+    setSelectedAdType(adType)
+    setInitialData(data)
+    setViewMode("create")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleSignOut = () => {
@@ -115,6 +123,13 @@ export default function AdBuilderPage() {
             >
               <LayoutGrid className="h-4 w-4" /> {t("builder.saved_ads")}
             </Button>
+            <Button
+              variant={viewMode === "lookup" ? "default" : "outline"}
+              onClick={() => { setViewMode("lookup"); setInitialData(undefined); }}
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" /> {t("builder.lookup") || "Lookup"}
+            </Button>
           </div>
 
           <h1 className="mb-3 text-4xl font-bold">{t("builder.title")}</h1>
@@ -130,6 +145,8 @@ export default function AdBuilderPage() {
 
         {viewMode === "saved" ? (
           <SavedAdsList userId={session?.user?.email || ""} onSelectAd={handleLoadAd} />
+        ) : viewMode === "lookup" ? (
+          <AdLookup onSelectTemplate={handleSelectTemplate} />
         ) : (
           <>
             <div className="mb-12 space-y-6">
