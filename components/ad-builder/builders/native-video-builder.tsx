@@ -14,7 +14,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
+import { getUserAds } from "@/firebase/firestore"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Sparkles as SparklesIcon } from "lucide-react"
 
 export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & { id?: string } }) {
     const { toast } = useToast()
@@ -40,6 +45,42 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
 
     // Output Output
     const [embedScript, setEmbedScript] = useState("")
+
+    // Project Selection
+    const [videoProjects, setVideoProjects] = useState<(AdRecord & { id: string })[]>([])
+    const [isFetchingProjects, setIsFetchingProjects] = useState(false)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+    const fetchVideoProjects = async () => {
+        if (!session?.user?.email) return
+        setIsFetchingProjects(true)
+        try {
+            const ads = await getUserAds(session.user.email)
+            const remotionProjects = ads.filter(ad => ad.type === "remotion-video" || ad.type === "native-video")
+            setVideoProjects(remotionProjects)
+        } catch (err) {
+            console.error("Error fetching projects:", err)
+        } finally {
+            setIsFetchingProjects(false)
+        }
+    }
+
+    const selectProject = (project: AdRecord & { id: string }) => {
+        setHeadline(project.settings.headline || "")
+        setBody(project.settings.body || project.settings.subtext || "")
+        setCtaText(project.settings.ctaText || "Learn More")
+
+        if (project.settings.videoUrl) {
+            setVideoUrl(project.settings.videoUrl)
+        }
+
+        if (project.settings.url) {
+            setTargetUrl(project.settings.url)
+        }
+
+        setIsDialogOpen(false)
+        toast({ title: "Project Imported", description: "Video and settings have been populated." })
+    }
 
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -138,10 +179,6 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
         }
     }
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied!", description: "Code copied to clipboard." })
-    }
 
     return (
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2 relative">
@@ -178,7 +215,55 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
                                 <Input value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Watch Now" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Video (MP4/WebM)</Label>
+                                <Label className="flex flex-col items-start gap-1">
+                                    <span>Video(MP4/WebM) or </span>
+                                    <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                                        setIsDialogOpen(open)
+                                        if (open) fetchVideoProjects()
+                                    }}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 gap-1.5 p-0 px-2 uppercase font-bold tracking-wider">
+                                                <SparklesIcon className="w-3 h-3" />
+                                                Video Creator
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-md bg-white">
+                                            <DialogHeader>
+                                                <DialogTitle>Import Video Project</DialogTitle>
+                                                <DialogDescription>
+                                                    Select a project from the Video Creator toolkit to import its content.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="space-y-2 mt-4 max-h-[300px] overflow-y-auto pr-2">
+                                                {isFetchingProjects ? (
+                                                    <div className="flex items-center justify-center py-8">
+                                                        <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                                                    </div>
+                                                ) : videoProjects.length === 0 ? (
+                                                    <div className="text-center py-8 text-muted-foreground text-sm">
+                                                        No saved video projects found.
+                                                    </div>
+                                                ) : (
+                                                    videoProjects.map(project => (
+                                                        <button
+                                                            key={project.id}
+                                                            onClick={() => selectProject(project)}
+                                                            className="w-full text-left p-3 rounded-lg border border-slate-100 hover:border-emerald-500/50 hover:bg-emerald-50/50 transition-all group"
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="font-semibold text-sm group-hover:text-emerald-600 transition-colors">{project.campaign}</span>
+                                                                <span className="text-[10px] text-slate-400">{project.createdAt?.toDate?.().toLocaleDateString()}</span>
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-500 mt-1 truncate italic">
+                                                                "{project.settings.headline}" - {project.settings.subtext}
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </Label>
                                 <Input type="file" onChange={handleVideoUpload} accept="video/mp4,video/webm" />
                             </div>
                         </div>
@@ -250,26 +335,7 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
 
             <div className="space-y-6">
                 {/* Embed Script Output */}
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={copyToClipboard} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
 
                 <Card className="border-border bg-card sticky top-24">
                     <CardHeader>

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Download, Upload, Copy, Save } from "lucide-react"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 import { uploadAdAsset } from "@/firebase/storage"
 import { type AdRecord, saveAdRecord, getUserProfile } from "@/firebase/firestore"
@@ -425,10 +426,6 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
     setStatus(`Audio: ${f.name}`)
   }
 
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(embedScript)
-    toast({ title: "Copied!", description: "Embed script copied to clipboard." })
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -784,26 +781,7 @@ export function PodcastwithBuilder({ initialData }: { initialData?: AdRecord }) 
 
       <div className="space-y-6">
         {/* Embed Script Output */}
-        {embedScript && (
-          <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                Ad Ready!
-              </h3>
-              <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
-                <Copy className="h-4 w-4" /> Copy Script
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Copy and paste this script into your website to embed the ad.
-            </p>
-            <textarea
-              className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
-              readOnly
-              value={embedScript}
-            />
-          </Card>
-        )}
+        <AdScriptResult script={embedScript} />
 
         <Card className="border-border bg-card p-8 space-y-3">
           <Label>Preview (HTML)</Label>

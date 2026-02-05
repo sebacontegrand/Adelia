@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Upload, Save, Copy, Image as ImageIcon } from "lucide-react"
 
@@ -16,6 +18,7 @@ import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 function safeFileComponent(value: string) {
     return value.trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80)
@@ -68,7 +71,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
 
     const [campaign, setCampaign] = useState(initialData?.campaign ?? "Desktop_Wallpaper_Skin")
     const [placement, setPlacement] = useState(initialData?.placement ?? "skin_default")
-    const [targetUrl, setTargetUrl] = useState(initialData?.settings?.url ?? "https://example.com")
+    const [skinUrl, setSkinUrl] = useState(initialData?.settings?.url ?? "https://example.com")
     const [bgUrl, setBgUrl] = useState(initialData?.assets?.background ?? "")
 
     const [cpm, setCpm] = useState<number>(initialData?.cpm ?? 12.0)
@@ -102,7 +105,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
     }
 
     const handleSave = async () => {
-        if (!bgUrl || !targetUrl) {
+        if (!bgUrl || !skinUrl) {
             toast({ title: "Missing Fields", description: "Background and Target URL are required.", variant: "destructive" })
             return
         }
@@ -122,7 +125,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
 
             const htmlForCloud = generateSkinHtml({
                 bgUrl,
-                clickTag: targetUrl
+                clickTag: skinUrl
             })
 
             const htmlWithTracking = htmlForCloud.replace("</body>", `${trackingCode}\n</body>`);
@@ -136,7 +139,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                 type: "desktop-skin",
                 assets: { background: bgUrl },
                 htmlUrl,
-                settings: { url: targetUrl },
+                settings: { url: skinUrl },
                 status: "active",
                 cpm,
                 budget
@@ -154,7 +157,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
   // Click handler for body
   document.body.addEventListener('click', function(e) {
     if (e.target === document.body) {
-      window.open(clickMacro + encodeURIComponent("${targetUrl}"), "_blank");
+      window.open(clickMacro + encodeURIComponent("${skinUrl}"), "_blank");
     }
   });
 
@@ -179,10 +182,6 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
         }
     }
 
-    const handleCopyScript = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied!", description: "Embed script copied to clipboard." })
-    }
 
     return (
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
@@ -193,7 +192,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Campaign Name</Label>
-                                <Input value={campaign} onChange={e => setCampaign(e.target.value)} />
+                                <Input value={campaign} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCampaign(e.target.value)} />
                             </div>
 
                             <SlotSelector
@@ -211,7 +210,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                                         type="number"
                                         step="0.01"
                                         value={cpm}
-                                        onChange={e => setCpm(parseFloat(e.target.value) || 0)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCpm(parseFloat(e.target.value) || 0)}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -220,7 +219,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                                         type="number"
                                         step="1"
                                         value={budget}
-                                        onChange={e => setBudget(parseFloat(e.target.value) || 0)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudget(parseFloat(e.target.value) || 0)}
                                     />
                                 </div>
                             </div>
@@ -231,7 +230,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                         </div>
                         <div className="space-y-2">
                             <Label>Target URL</Label>
-                            <Input value={targetUrl} onChange={e => setTargetUrl(e.target.value)} />
+                            <Input value={skinUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSkinUrl(e.target.value)} />
                         </div>
                         <Button className="w-full" size="lg" onClick={handleSave} disabled={isWorking}>
                             <Save className="mr-2 h-4 w-4" />
@@ -240,26 +239,7 @@ export function SkinBuilder({ initialData }: { initialData?: any }) {
                     </div>
                 </Card>
 
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
             </div>
 
             <div className="space-y-6">

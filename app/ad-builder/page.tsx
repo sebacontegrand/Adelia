@@ -167,10 +167,10 @@ export default function AdBuilderPage() {
         ) : viewMode === "video" ? (
           <VideoCreator />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Sidebar Column: 4/12 (~1/3) */}
-            <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
-              <Card className="border-border bg-card p-6 shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+            {/* Sidebar Column: 5/12 */}
+            <aside className="xl:col-span-5 lg:sticky lg:top-24 space-y-6">
+              <Card className="border-border bg-card p-4 shadow-sm overflow-hidden">
                 <div className="mb-4">
                   <h3 className="font-bold text-lg mb-1">{t("builder.available_formats")}</h3>
                   <p className="text-xs text-muted-foreground">Select a creative style to start building.</p>
@@ -186,8 +186,8 @@ export default function AdBuilderPage() {
               </Card>
             </aside>
 
-            {/* Main Column: 8/12 (~2/3) */}
-            <div className="lg:col-span-8 space-y-8">
+            {/* Main Column: 7/12 */}
+            <div className="xl:col-span-7 space-y-8">
               {!selectedAdType ? (
                 <Card className="flex flex-col items-center justify-center p-20 text-center border-dashed border-2 bg-muted/20">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">

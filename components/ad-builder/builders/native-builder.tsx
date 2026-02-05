@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?: string } }) {
     const { toast } = useToast()
@@ -146,10 +147,6 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
         }
     }
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied!", description: "Code copied to clipboard." })
-    }
 
     return (
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2 relative">
@@ -265,26 +262,7 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
             {/* Preview & Output */}
             <div className="space-y-6">
                 {/* Embed Script Output */}
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={copyToClipboard} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
 
                 <Card className="border-border bg-card sticky top-24">
                     <CardHeader>

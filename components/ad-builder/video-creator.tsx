@@ -11,9 +11,13 @@ import { Video, Settings2, Download, Copy, Play, Terminal, Sparkles, Loader2, In
 import { useToast } from "@/hooks/use-toast"
 import { useRef } from "react"
 import { Slider } from "@/components/ui/slider"
+import { useSession } from "next-auth/react"
+import { saveAdRecord } from "@/firebase/firestore"
 
 export function VideoCreator() {
     const { toast } = useToast()
+    const { data: session } = useSession()
+    const [isSaving, setIsSaving] = useState(false)
 
     // Video Parameters
     const [headline, setHeadline] = useState("Summertime Special")
@@ -143,6 +147,41 @@ export function VideoCreator() {
     const handleCopyCommand = () => {
         navigator.clipboard.writeText(renderCommand)
         toast({ title: "Command Copied!", description: "Run this in your terminal to render the video." })
+    }
+
+    const handleSave = async () => {
+        if (!session?.user?.email) {
+            toast({ title: "Authentication Required", description: "Please sign in to save your work.", variant: "destructive" })
+            return
+        }
+
+        setIsSaving(true)
+        try {
+            await saveAdRecord({
+                userId: session.user.email,
+                campaign: `Video_${headline.substring(0, 15)}`,
+                placement: "remotion-video",
+                type: "remotion-video",
+                assets: {
+                    background: bgImage,
+                    logo: logo
+                },
+                settings: {
+                    headline,
+                    subtext,
+                    brandColor,
+                    ctaText,
+                    overlayOpacity
+                },
+                status: "active"
+            })
+            toast({ title: "Saved to Dashboard", description: "Your video project has been persisted." })
+        } catch (error) {
+            console.error("Save Error:", error)
+            toast({ title: "Save Failed", description: "There was an error saving your project.", variant: "destructive" })
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     return (
@@ -428,6 +467,15 @@ export function VideoCreator() {
                                 <span>The video will be saved in your <code>out/</code> folder.</span>
                             </div>
                         </div>
+
+                        <Button
+                            className="w-full mt-4 variant-outline border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 gap-2"
+                            onClick={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
+                            {isSaving ? "Saving..." : "Save to Dashboard"}
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

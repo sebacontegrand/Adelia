@@ -119,8 +119,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    cursor: pointer;
   }
 }
 
@@ -128,6 +136,7 @@
 .nav-desktop {
   display: flex !important;
 }
+
 .nav-mobile {
   display: flex !important;
 }

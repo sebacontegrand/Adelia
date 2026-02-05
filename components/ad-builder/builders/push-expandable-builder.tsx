@@ -19,6 +19,7 @@ import { saveAdRecord, getUserProfile, type UserProfile } from "@/firebase/fires
 import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 type ExpandAction = "click" | "mouseover"
 
@@ -636,10 +637,6 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
     }
   }
 
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(embedScript)
-    toast({ title: "Copied!", description: "Embed script copied to clipboard." })
-  }
 
   return (
     <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
@@ -853,28 +850,10 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
 
       {/* PREVIEW */}
       <div className="space-y-6">
-
         {/* Embed Script Output */}
-        {embedScript && (
-          <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-emerald-500">Ad Ready!</h3>
-              <Button variant="ghost" size="sm" onClick={handleCopyScript}>
-                <Copy className="h-4 w-4 mr-2" /> Copy Script
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Copy and paste this script into your website to embed the ad.
-            </p>
-            <textarea
-              className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
-              readOnly
-              value={embedScript}
-            />
-          </Card>
-        )}
+        <AdScriptResult script={embedScript} />
 
-        <Card className="border-border bg-card p-8 space-y-6">
+        <Card className="border-border bg-card p-8 space-y-4">
           <div className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
             <h2 className="text-2xl font-bold">Previsualizacion del recorte</h2>

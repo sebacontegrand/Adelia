@@ -20,6 +20,7 @@ import { db } from "@/firebase/firebase.config"
 import { doc, collection } from "firebase/firestore"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 function escapeHtmlAttr(value: string) {
     return value.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -160,6 +161,7 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
     const [ctaText, setCtaText] = useState(initialData?.settings?.ctaText ?? "Descubrir")
     const [targetUrl, setTargetUrl] = useState(initialData?.settings?.url ?? "https://example.com")
     const [parallaxSpeed, setParallaxSpeed] = useState(initialData?.settings?.parallaxSpeed ?? 0.5)
+    const [scratchPercent, setScratchPercent] = useState(0); // Added for the new Slider
 
     // Assets
     const [bgUrl, setBgUrl] = useState(initialData?.assets?.background ?? "")
@@ -195,10 +197,6 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
         }
     }
 
-    const handleCopyScript = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied!", description: "Embed script copied to clipboard." })
-    }
 
     const handleExport = async () => {
         if (!bgUrl || !headline || !targetUrl) {
@@ -341,7 +339,7 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
                         </div>
                         <div className="space-y-2">
                             <Label>CTA Text</Label>
-                            <Input value={ctaText} onChange={e => setCtaText(e.target.value)} />
+                            <Slider value={[scratchPercent]} onValueChange={(v: number[]) => setScratchPercent(v[0])} max={100} step={1} />
                         </div>
                         <div className="space-y-2">
                             <Label>Target URL</Label>
@@ -365,26 +363,7 @@ export function ParallaxBuilder({ initialData }: { initialData?: any }) {
 
             <div className="space-y-6">
                 {/* Embed Script Output */}
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
 
                 <Card className="border-border bg-card sticky top-24 overflow-hidden">
                     <div className="p-4 border-b">

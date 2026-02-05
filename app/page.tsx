@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Navbar } from "@/components/navbar"
 import { useLanguage } from "@/app/context/language-context"
+import { Sparkles } from "lucide-react"
 
 export default function HomePage() {
   const { data: session, status } = useSession()
@@ -69,41 +70,64 @@ export default function HomePage() {
     <div className="min-h-screen">
       <Navbar onSignOut={isAuthenticated ? handleSignOut : undefined} />
       <main className="container mx-auto px-4 py-12">
-        <div className="mb-12 text-center">
-          <h1 className="mb-4 text-5xl font-bold text-balance">{t("home.title")}</h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground text-balance">
-            {t("home.subtitle")}
-          </p>
-        </div>
+        {/* Future Showcase Section */}
+        <section className="mb-20 overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl">
+          <div className="grid md:grid-cols-2 items-center">
+            <div className="p-8 lg:p-16 space-y-6">
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
-            <Link href="/formats" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">{t("home.card.formats.title")}</h3>
-              <p className="text-muted-foreground">
-                {t("home.card.formats.desc")}
+              <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+                Design the Future of <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Digital Creatives</span>
+              </h2>
+              <p className="text-lg text-white/60 leading-relaxed">
+                Adelia's advanced engine powers high-impact formats that redefine user engagement.
+                Experience the perfect blend of performance and aesthetics.
               </p>
-            </Link>
-          </Card>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                <Link href="/formats" className="group">
+                  <div className="space-y-3">
+                    <Button className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 h-12 text-sm font-semibold transition-all group-hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                      {t("home.card.formats.title")}
+                    </Button>
+                    <p className="text-[11px] leading-relaxed text-white/40 px-1 group-hover:text-white/70 transition-colors line-clamp-2">
+                      {t("home.card.formats.desc")}
+                    </p>
+                  </div>
+                </Link>
 
-          <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
-            <Link href="/ad-builder" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">{t("home.card.builder.title")}</h3>
-              <p className="text-muted-foreground">
-                {t("home.card.builder.desc")}
-              </p>
-            </Link>
-          </Card>
+                <Link href="/ad-builder" className="group">
+                  <div className="space-y-3">
+                    <Button variant="outline" className="w-full cursor-pointer rounded-xl px-6 h-12 text-sm font-semibold border-white/10 bg-white/5 hover:bg-white/10 transition-all group-hover:scale-[1.02] text-white">
+                      {t("home.card.builder.title")}
+                    </Button>
+                    <p className="text-[11px] leading-relaxed text-white/40 px-1 group-hover:text-white/70 transition-colors line-clamp-2">
+                      {t("home.card.builder.desc")}
+                    </p>
+                  </div>
+                </Link>
 
-          <Card className="border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-md">
-            <Link href="/chat" className="block h-full">
-              <h3 className="mb-2 text-2xl font-bold">{t("home.card.support.title")}</h3>
-              <p className="text-muted-foreground">
-                {t("home.card.support.desc")}
-              </p>
-            </Link>
-          </Card>
-        </div>
+                <Link href="/chat" className="group">
+                  <div className="space-y-3 sm:col-span-2 lg:col-span-1">
+                    <Button variant="ghost" className="w-full cursor-pointer rounded-xl px-6 h-12 text-sm font-semibold text-white/70 hover:text-white hover:bg-white/5 transition-all group-hover:scale-[1.02]">
+                      {t("home.card.support.title")}
+                    </Button>
+                    <p className="text-[11px] leading-relaxed text-white/40 px-1 group-hover:text-white/70 transition-colors line-clamp-2">
+                      {t("home.card.support.desc")}
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+            <div className="relative h-[400px] lg:h-[600px] w-full overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent z-10 md:hidden" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10 hidden md:block" />
+              <img
+                src="/future.png"
+                alt="The Future of Adelia"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+              />
+            </div>
+          </div>
+        </section>
       </main>
 
       {!isAuthenticated && (

@@ -22,8 +22,8 @@ type AdTypeSelectorProps = {
 export function AdTypeSelector({ options, selectedId, onSelect, variant = "grid" }: AdTypeSelectorProps) {
   return (
     <div className={cn(
-      "grid gap-4",
-      variant === "grid" ? "md:grid-cols-2" : "grid-cols-1"
+      "grid gap-3",
+      variant === "grid" ? "md:grid-cols-2" : "grid-cols-2"
     )}>
       {options.map((option) => {
         const isSelected = option.id === selectedId

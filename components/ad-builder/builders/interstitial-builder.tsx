@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Upload, Download, Image as ImageIcon, Save, X, Timer, Copy } from "lucide-react"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 import { uploadAdAsset } from "@/firebase/storage"
 import { saveAdRecord } from "@/firebase/firestore"
@@ -223,10 +224,6 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
         }
     }
 
-    const handleCopyScript = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied!", description: "Embed script copied to clipboard." })
-    }
 
     const handleExport = async () => {
         if (!bgUrl || !headline || !targetUrl) {
@@ -405,26 +402,7 @@ export function InterstitialBuilder({ initialData }: { initialData?: any }) {
 
             <div className="space-y-6">
                 {/* Embed Script Output */}
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
 
                 <Card className="border-border bg-card sticky top-24 overflow-hidden h-[600px] flex items-center justify-center bg-slate-100 dark:bg-neutral-900">
                     {/* Mock Phone/Screen */}

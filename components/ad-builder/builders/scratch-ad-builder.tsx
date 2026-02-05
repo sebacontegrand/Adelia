@@ -17,6 +17,8 @@ import { db } from "@/firebase/firebase.config"
 import { useSession } from "next-auth/react"
 import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
 
 interface ScratchAdBuilderProps {
     initialData?: AdRecord
@@ -501,10 +503,6 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
         }
     }
 
-    const handleCopyScript = () => {
-        navigator.clipboard.writeText(embedScript)
-        toast({ title: "Copied", description: "Script copied to clipboard" })
-    }
 
     return (
         <div className="grid gap-8 lg:grid-cols-2">
@@ -607,26 +605,7 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
 
             <div className="space-y-6">
                 {/* MOVED EMBED SCRIPT HERE */}
-                {embedScript && (
-                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
-                                Ad Ready!
-                            </h3>
-                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
-                                <Copy className="h-4 w-4" /> Copy Script
-                            </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Copy and paste this script into your website to embed the ad.
-                        </p>
-                        <textarea
-                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
-                            readOnly
-                            value={embedScript}
-                        />
-                    </Card>
-                )}
+                <AdScriptResult script={embedScript} />
 
                 <Label>Live Preview (300x250)</Label>
                 <div className="relative w-[300px] h-[250px] border border-slate-700 shadow-xl rounded overflow-hidden bg-black">
