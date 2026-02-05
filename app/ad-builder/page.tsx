@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { SavedAdsList } from "@/components/ad-builder/saved-ads-list"
 import { AdLookup } from "@/components/ad-builder/ad-lookup"
 import { type AdRecord } from "@/firebase/firestore"
-import { Plus, LayoutGrid, Search } from "lucide-react"
+import { Plus, LayoutGrid, Search, Video } from "lucide-react"
+import { VideoCreator } from "@/components/ad-builder/video-creator"
 import { useLanguage } from "@/app/context/language-context"
 
 export default function AdBuilderPage() {
@@ -23,7 +24,7 @@ export default function AdBuilderPage() {
   const isLoading = status === "loading"
 
   // State
-  const [viewMode, setViewMode] = useState<"create" | "saved" | "lookup">("create")
+  const [viewMode, setViewMode] = useState<"create" | "saved" | "lookup" | "video">("create")
   // We keep track of "initialData" to hydrate the builder if editing/viewing a saved ad
   const [initialData, setInitialData] = useState<AdRecord | undefined>(undefined)
 
@@ -130,10 +131,20 @@ export default function AdBuilderPage() {
             >
               <Search className="h-4 w-4" /> {t("builder.lookup") || "Lookup"}
             </Button>
+            <Button
+              variant={viewMode === "video" ? "default" : "outline"}
+              onClick={() => { setViewMode("video"); setInitialData(undefined); }}
+              className="gap-2"
+            >
+              <Video className="h-4 w-4" /> {t("builder.video_creator") || "Video Creator"}
+            </Button>
           </div>
 
           <h1 className="mb-3 text-4xl font-bold">
-            {viewMode === "saved" ? t("builder.saved_ads") : viewMode === "lookup" ? t("builder.lookup") : t("builder.title")}
+            {viewMode === "saved" ? t("builder.saved_ads") :
+              viewMode === "lookup" ? t("builder.lookup") :
+                viewMode === "video" ? (t("builder.video_creator") || "AI Video Creator") :
+                  t("builder.title")}
           </h1>
           {viewMode === "create" && selectedAdTypeEntry?.helperText ? (
             <div className="mx-auto max-w-6xl">
@@ -153,6 +164,8 @@ export default function AdBuilderPage() {
           <SavedAdsList userId={session?.user?.email || ""} onSelectAd={handleLoadAd} />
         ) : viewMode === "lookup" ? (
           <AdLookup onSelectTemplate={handleSelectTemplate} />
+        ) : viewMode === "video" ? (
+          <VideoCreator />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Sidebar Column: 4/12 (~1/3) */}

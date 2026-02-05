@@ -42,9 +42,8 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
 
     const [isWorking, setIsWorking] = useState(false)
 
-    // Output Dialog
-    const [showCodeDialog, setShowCodeDialog] = useState(false)
-    const [generatedCode, setGeneratedCode] = useState("")
+    // Output Output
+    const [embedScript, setEmbedScript] = useState("")
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -136,8 +135,7 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
 <!-- 2. Add the AdPilot script to your <head> (only once) -->
 <script src="${origin}/adpilot.js?id=${session.user.email}" async></script>`
 
-            setGeneratedCode(code)
-            setShowCodeDialog(true)
+            setEmbedScript(code)
 
             toast({ title: "Ad Saved!", description: "Native ad configuration updated." })
         } catch (err: any) {
@@ -149,7 +147,7 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
     }
 
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(generatedCode)
+        navigator.clipboard.writeText(embedScript)
         toast({ title: "Copied!", description: "Code copied to clipboard." })
     }
 
@@ -255,16 +253,39 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                             </div>
                         </div>
 
-                        <Button onClick={handleSave} disabled={isWorking} className="w-full">
+                        <Button onClick={handleSave} disabled={isWorking} className="w-full" size="lg">
                             {isWorking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save & Get Code
+                            Save & Generate Script
                         </Button>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Preview */}
+            {/* Preview & Output */}
             <div className="space-y-6">
+                {/* Embed Script Output */}
+                {embedScript && (
+                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
+                                Ad Ready!
+                            </h3>
+                            <Button variant="outline" size="sm" onClick={copyToClipboard} className="gap-2">
+                                <Copy className="h-4 w-4" /> Copy Script
+                            </Button>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Copy and paste this script into your website to embed the ad.
+                        </p>
+                        <textarea
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500"
+                            readOnly
+                            value={embedScript}
+                        />
+                    </Card>
+                )}
+
                 <Card className="border-border bg-card sticky top-24">
                     <CardHeader>
                         <CardTitle>Native Preview</CardTitle>
@@ -302,42 +323,6 @@ export function NativeBuilder({ initialData }: { initialData?: AdRecord & { id?:
                 </Card>
             </div>
 
-            {/* Code Dialog Overlay */}
-            {showCodeDialog && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <Card className="w-full max-w-lg bg-background border-border shadow-2xl">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Integration Code</CardTitle>
-                            <Button variant="ghost" size="icon" onClick={() => setShowCodeDialog(false)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <CardDescription>
-                                Copy and paste this code where you want the ad to appear.
-                            </CardDescription>
-
-                            <div className="relative">
-                                <pre className="bg-slate-950 text-slate-50 p-4 rounded-md overflow-x-auto text-xs font-mono whitespace-pre-wrap break-all">
-                                    {generatedCode}
-                                </pre>
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    className="absolute top-2 right-2 h-6 px-2 text-xs"
-                                    onClick={copyToClipboard}
-                                >
-                                    <Copy className="mr-1 h-3 w-3" /> Copy
-                                </Button>
-                            </div>
-
-                            <div className="flex justify-end">
-                                <Button variant="outline" onClick={() => setShowCodeDialog(false)}>Close</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
         </div>
     )
 }

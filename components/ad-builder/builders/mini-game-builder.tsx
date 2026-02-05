@@ -533,27 +533,23 @@ export function MiniGameBuilder({ initialData }: { initialData?: AdRecord & { id
 
             <div className="space-y-6">
                 {embedScript && (
-                    <Card className="p-4 bg-emerald-500/5 border-emerald-500/50 animate-in fade-in slide-in-from-top-4">
-                        <div className="space-y-4">
-                            <Label className="text-emerald-600 font-bold flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                    <Gamepad2 className="h-4 w-4" /> Interactive Gate Ready!
-                                </span>
-                                <Button variant="ghost" size="sm" onClick={handleCopyScript} className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100">
-                                    <Copy className="h-4 w-4 mr-2" /> Copy
-                                </Button>
-                            </Label>
-
-                            <textarea
-                                className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
-                                readOnly
-                                value={embedScript}
-                            />
-
-                            <p className="text-[10px] text-muted-foreground">
-                                Paste this script at the exact point in your article where you want the content gating to begin.
-                            </p>
+                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
+                                <Gamepad2 className="h-5 w-5" /> Ad Ready!
+                            </h3>
+                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
+                                <Copy className="h-4 w-4" /> Copy Script
+                            </Button>
                         </div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Copy and paste this script into your website to embed the ad.
+                        </p>
+                        <textarea
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
+                            readOnly
+                            value={embedScript}
+                        />
                     </Card>
                 )}
 

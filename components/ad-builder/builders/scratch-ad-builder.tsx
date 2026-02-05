@@ -608,17 +608,23 @@ export function ScratchAdBuilder({ initialData }: ScratchAdBuilderProps) {
             <div className="space-y-6">
                 {/* MOVED EMBED SCRIPT HERE */}
                 {embedScript && (
-                    <Card className="p-4 bg-muted/50 border-border animate-in fade-in slide-in-from-top-4">
-                        <div className="space-y-2">
-                            <Label className="text-green-600 font-bold flex items-center gap-2">
-                                <Save className="h-4 w-4" /> Script Generated!
-                            </Label>
-                            <div className="flex gap-2">
-                                <Input value={embedScript} readOnly className="font-mono text-xs bg-white" />
-                                <Button size="icon" variant="outline" onClick={handleCopyScript}><Copy className="h-4 w-4" /></Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Copy this snippet and paste it into your publisher site.</p>
+                    <Card className="border-border bg-card p-6 border-emerald-500/50 bg-emerald-500/5 transition-all animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-emerald-500 flex items-center gap-2">
+                                Ad Ready!
+                            </h3>
+                            <Button variant="outline" size="sm" onClick={handleCopyScript} className="gap-2">
+                                <Copy className="h-4 w-4" /> Copy Script
+                            </Button>
                         </div>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Copy and paste this script into your website to embed the ad.
+                        </p>
+                        <textarea
+                            className="w-full h-32 p-3 font-mono text-xs border rounded-md bg-slate-950 text-slate-50 focus:ring-2 focus:ring-emerald-500 resize-none"
+                            readOnly
+                            value={embedScript}
+                        />
                     </Card>
                 )}
 
