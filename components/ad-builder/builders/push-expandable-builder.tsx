@@ -718,13 +718,13 @@ export function PushExpandableBuilder({ initialData }: { initialData?: AdRecord 
           <div className="rounded-md border p-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">ZIP</span>
-              <span className="font-mono">{zipName}</span>
+              <span className="font-mono text-[10px]">{zipName}</span>
             </div>
             <div className="mt-2 space-y-1 text-muted-foreground">
-              <div className="font-mono">index.html</div>
-              <div className="font-mono">{collapsedNameInZip}</div>
-              <div className="font-mono">{expandedNameInZip}</div>
-              <div className="font-mono">manifest.json</div>
+              <div className="font-mono text-[10px]">index.html</div>
+              <div className="font-mono text-[10px]">{collapsedNameInZip}</div>
+              <div className="font-mono text-[10px]">{expandedNameInZip}</div>
+              <div className="font-mono text-[8px]">manifest.json</div>
             </div>
           </div>
 
