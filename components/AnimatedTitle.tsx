@@ -65,11 +65,12 @@ export const AnimatedTitle: React.FC = () => {
                 style={{
                     display: "flex",
                     flexWrap: "wrap",
-                    gap: "12px",
+                    gap: "24px",
                     fontSize: "96px",
-                    fontWeight: 700,
-                    lineHeight: 1.2,
+                    fontWeight: 800,
+                    lineHeight: 1.1,
                     maxWidth: "100%",
+                    justifyContent: "center",
                 }}
             >
                 {words.map((word, i) => (

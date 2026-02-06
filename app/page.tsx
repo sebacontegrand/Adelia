@@ -132,7 +132,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                 <Link href="/formats" className="group">
                   <div className="space-y-3">
-                    <Button className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 h-12 text-sm font-semibold transition-all group-hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                    <Button className="w-full cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-12 text-sm font-semibold transition-all group-hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                       {t("home.card.formats.title")}
                     </Button>
                     <p className="text-[11px] leading-relaxed text-white/40 px-1 group-hover:text-white/70 transition-colors line-clamp-2">

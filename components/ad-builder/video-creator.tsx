@@ -28,6 +28,36 @@ export function VideoCreator() {
     const [ctaText, setCtaText] = useState("Shop Now")
     const [overlayOpacity, setOverlayOpacity] = useState(0.6)
 
+    // Video Config Properties
+    const [width, setWidth] = useState(1920)
+    const [height, setHeight] = useState(1080)
+    const [durationInFrames, setDurationInFrames] = useState(150)
+    const [fps, setFps] = useState(30)
+
+    // Animation Timing
+    const [headlineStartFrame, setHeadlineStartFrame] = useState(0)
+    const [subtextStartFrame, setSubtextStartFrame] = useState(25)
+    const [ctaStartFrame, setCtaStartFrame] = useState(50)
+
+    // Advanced Styling
+    const [fontFamily, setFontFamily] = useState('Helvetica, Arial, sans-serif')
+    const [bgBlur, setBgBlur] = useState(0)
+    const [bgGrayscale, setBgGrayscale] = useState(false)
+    const [gradientDirection, setGradientDirection] = useState<'top-to-bottom' | 'left-to-right' | 'radial'>('top-to-bottom')
+    const [animationStyle, setAnimationStyle] = useState<'cinematic' | 'fast' | 'minimal'>('cinematic')
+    const [textAlignment, setTextAlignment] = useState<'left' | 'center' | 'right'>('center')
+    const [showSafeZones, setShowSafeZones] = useState(false)
+    const [showProgressBar, setShowProgressBar] = useState(false)
+    const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'center' | 'bottom-right'>('center')
+    const [ctaMarginBottom, setCtaMarginBottom] = useState(60)
+
+    const fonts = [
+        { name: 'Modern Sans', value: 'Inter, system-ui, sans-serif' },
+        { name: 'Classic Serif', value: 'Georgia, serif' },
+        { name: 'Punchy Mono', value: 'ui-monospace, monospace' },
+        { name: 'Elegant', value: 'Playfair Display, serif' }
+    ]
+
     // Background Presets
     const presets = [
         { name: "Luxury", url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1920", color: "#d4af37" },
@@ -42,14 +72,27 @@ export function VideoCreator() {
     const [prompt, setPrompt] = useState("")
 
     // Command generation
-    const renderCommand = `npx remotion render remotion/index.tsx AdVideo out/video.mp4 --props='${JSON.stringify({
+    const renderCommand = `npx remotion render remotion/index.tsx AdVideo out/video.mp4 --width=${width} --height=${height} --fps=${fps} --props='${JSON.stringify({
         headline,
         subtext,
         brandColor,
         bgImage,
         logo,
         ctaText,
-        overlayOpacity
+        overlayOpacity,
+        headlineStartFrame,
+        subtextStartFrame,
+        ctaStartFrame,
+        fontFamily,
+        bgBlur,
+        bgGrayscale,
+        gradientDirection,
+        animationStyle,
+        textAlignment,
+        showSafeZones,
+        showProgressBar,
+        logoPosition,
+        ctaMarginBottom
     })}'`
 
     const handleAIGenerate = async () => {
@@ -171,7 +214,21 @@ export function VideoCreator() {
                     subtext,
                     brandColor,
                     ctaText,
-                    overlayOpacity
+                    overlayOpacity,
+                    fps,
+                    headlineStartFrame,
+                    subtextStartFrame,
+                    ctaStartFrame,
+                    fontFamily,
+                    bgBlur,
+                    bgGrayscale,
+                    gradientDirection,
+                    animationStyle,
+                    textAlignment,
+                    showSafeZones,
+                    showProgressBar,
+                    logoPosition,
+                    ctaMarginBottom
                 },
                 status: "active"
             })
@@ -297,12 +354,234 @@ export function VideoCreator() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Resolution</Label>
-                                        <div className="h-10 border rounded-md flex items-center px-3 bg-muted/30 text-xs font-medium">
-                                            1080p (16:9)
+                                        <Label>Preset Format</Label>
+                                        <div className="h-10 border rounded-md flex items-center px-1 bg-muted/30">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-[10px] flex-1"
+                                                onClick={() => { setWidth(1920); setHeight(1080); }}
+                                            >
+                                                16:9
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-[10px] flex-1"
+                                                onClick={() => { setWidth(1080); setHeight(1920); }}
+                                            >
+                                                9:16
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-[10px] flex-1"
+                                                onClick={() => { setWidth(1080); setHeight(1080); }}
+                                            >
+                                                1:1
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-2 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Video Properties</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Width (px)</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={width}
+                                        onChange={(e) => setWidth(Math.max(1, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Height (px)</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={height}
+                                        onChange={(e) => setHeight(Math.max(1, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Duration (Frames)</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={durationInFrames}
+                                        onChange={(e) => setDurationInFrames(Math.max(1, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">FPS</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={fps}
+                                        onChange={(e) => setFps(Math.max(1, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Typography & Style</Label>
+
+                            <div className="space-y-2">
+                                <Label className="text-[10px]">Font Family</Label>
+                                <select
+                                    className="w-full bg-background border border-input rounded-md h-8 text-xs px-2"
+                                    value={fontFamily}
+                                    onChange={(e) => setFontFamily(e.target.value)}
+                                >
+                                    {fonts.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Background Blur</Label>
+                                    <Slider
+                                        value={[bgBlur]}
+                                        max={20}
+                                        step={1}
+                                        onValueChange={([v]) => setBgBlur(v)}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between pt-4">
+                                    <Label className="text-[10px]">Grayscale</Label>
+                                    <input
+                                        type="checkbox"
+                                        checked={bgGrayscale}
+                                        onChange={(e) => setBgGrayscale(e.target.checked)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Layout & Composition</Label>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Alignment</Label>
+                                    <div className="flex gap-1">
+                                        {(['left', 'center', 'right'] as const).map(a => (
+                                            <Button
+                                                key={a}
+                                                variant={textAlignment === a ? 'default' : 'outline'}
+                                                size="sm"
+                                                className="h-7 flex-1 text-[10px] capitalize"
+                                                onClick={() => setTextAlignment(a)}
+                                            >
+                                                {a}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Logo Position</Label>
+                                    <select
+                                        className="w-full bg-background border border-input rounded-md h-8 text-xs px-2"
+                                        value={logoPosition}
+                                        onChange={(e) => setLogoPosition(e.target.value as any)}
+                                    >
+                                        <option value="center">Center</option>
+                                        <option value="top-left">Top Left</option>
+                                        <option value="top-right">Top Right</option>
+                                        <option value="bottom-right">Bottom Right</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[10px]">Gradient Flow</Label>
+                                <div className="flex gap-1">
+                                    {(['top-to-bottom', 'left-to-right', 'radial'] as const).map(d => (
+                                        <Button
+                                            key={d}
+                                            variant={gradientDirection === d ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="h-7 flex-1 text-[10px] capitalize"
+                                            onClick={() => setGradientDirection(d)}
+                                        >
+                                            {d.split('-').join(' ')}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Animation Style</Label>
+                            <div className="flex gap-1">
+                                {(['cinematic', 'fast', 'minimal'] as const).map(s => (
+                                    <Button
+                                        key={s}
+                                        variant={animationStyle === s ? 'default' : 'outline'}
+                                        size="sm"
+                                        className="h-7 flex-1 text-[10px] capitalize"
+                                        onClick={() => setAnimationStyle(s)}
+                                    >
+                                        {s}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Advanced timing</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Headline</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={headlineStartFrame}
+                                        onChange={(e) => setHeadlineStartFrame(Math.max(0, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">Subtext</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={subtextStartFrame}
+                                        onChange={(e) => setSubtextStartFrame(Math.max(0, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px]">CTA</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={ctaStartFrame}
+                                        onChange={(e) => setCtaStartFrame(Math.max(0, Number(e.target.value)))}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extras & Guides</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-[10px]">Show Safe Zones</Label>
+                                <input type="checkbox" checked={showSafeZones} onChange={e => setShowSafeZones(e.target.checked)} />
+                            </div>
+                            <div className="flex items-center justify-between py-1">
+                                <Label className="text-[10px]">Show Progress Bar</Label>
+                                <input type="checkbox" checked={showProgressBar} onChange={e => setShowProgressBar(e.target.checked)} />
                             </div>
                         </div>
 
@@ -369,7 +648,6 @@ export function VideoCreator() {
                                     ))}
                                 </div>
                             </div>
-
                             <div className="space-y-2 border-t border-border pt-4">
                                 <Label className="flex items-center gap-2">
                                     <ImageIcon className="h-4 w-4 text-emerald-500" />
@@ -414,67 +692,14 @@ export function VideoCreator() {
                                 </div>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border bg-card overflow-hidden shadow-lg">
-                    <CardHeader className="bg-slate-900 text-slate-50 border-b-0 pb-2">
-                        <CardTitle className="text-sm flex items-center gap-2">
-                            <Download className="h-4 w-4 text-emerald-400" />
-                            How to get your MP4
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 bg-slate-900">
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-md p-3 mb-4 flex gap-3">
-                            <Info className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-emerald-100 leading-relaxed">
-                                    Video rendering runs on your computer using <strong>npx</strong> (no installation needed).
-                                </p>
-                                <p className="text-[10px] text-emerald-100/70 italic">
-                                    Make sure your terminal is open in the <strong>project root folder</strong>.
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className="text-[9px] text-slate-400 mb-2 uppercase tracking-tight font-bold">
-                            Step 1: Copy this command
-                        </p>
-                        <div className="relative group mb-3">
-                            <pre className="bg-slate-950 text-emerald-400 p-3 rounded border border-slate-800 text-[10px] font-mono whitespace-pre-wrap break-all pr-10">
-                                {renderCommand}
-                            </pre>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="absolute top-2 right-2 h-7 w-7 text-slate-400 hover:text-white"
-                                onClick={handleCopyCommand}
-                            >
-                                <Copy className="h-3 w-3" />
-                            </Button>
-                        </div>
-
-                        <p className="text-[9px] text-slate-400 mb-2 uppercase tracking-tight font-bold">
-                            Step 2: Run it in your terminal
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-3 text-[10px] text-slate-500 bg-slate-950/50 p-2 rounded border border-slate-800/50">
-                                <Terminal className="h-3 w-3" />
-                                <span>Run inside the <code>ad-platform</code> folder.</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] text-slate-500 bg-slate-950/50 p-2 rounded border border-slate-800/50">
-                                <Download className="h-3 w-3" />
-                                <span>The video will be saved in your <code>out/</code> folder.</span>
-                            </div>
-                        </div>
 
                         <Button
-                            className="w-full mt-4 variant-outline border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 gap-2"
+                            className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-11 shadow-lg shadow-emerald-900/20"
                             onClick={handleSave}
                             disabled={isSaving}
                         >
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4" />}
-                            {isSaving ? "Saving..." : "Save to Dashboard"}
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                            {isSaving ? "Saving..." : "Save to Adelia DB"}
                         </Button>
                     </CardContent>
                 </Card>
@@ -495,10 +720,10 @@ export function VideoCreator() {
                     <div className="aspect-video bg-black relative">
                         <Player
                             component={AdVideo as any}
-                            durationInFrames={150}
-                            compositionWidth={1920}
-                            compositionHeight={1080}
-                            fps={30}
+                            durationInFrames={durationInFrames}
+                            compositionWidth={width}
+                            compositionHeight={height}
+                            fps={fps}
                             style={{
                                 width: '100%',
                             }}
@@ -510,7 +735,20 @@ export function VideoCreator() {
                                 bgImage,
                                 logo,
                                 ctaText,
-                                overlayOpacity
+                                overlayOpacity,
+                                headlineStartFrame,
+                                subtextStartFrame,
+                                ctaStartFrame,
+                                fontFamily,
+                                bgBlur,
+                                bgGrayscale,
+                                gradientDirection,
+                                animationStyle,
+                                textAlignment,
+                                showSafeZones,
+                                showProgressBar,
+                                logoPosition,
+                                ctaMarginBottom
                             }}
                         />
                     </div>
@@ -523,7 +761,7 @@ export function VideoCreator() {
                         </div>
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Format</p>
-                            <p className="text-sm font-semibold">Landscape (16:9)</p>
+                            <p className="text-sm font-semibold">{width}x{height} ({width === height ? '1:1' : width > height ? 'Landscape' : 'Portrait'})</p>
                         </div>
                     </Card>
                     <Card className="p-4 border-border bg-card flex items-center gap-4 transition-all hover:shadow-md">
@@ -537,6 +775,6 @@ export function VideoCreator() {
                     </Card>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
