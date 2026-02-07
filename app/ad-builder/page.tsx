@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SavedAdsList } from "@/components/ad-builder/saved-ads-list"
 import { AdLookup } from "@/components/ad-builder/ad-lookup"
+import { cn } from "@/lib/utils"
 import { type AdRecord } from "@/firebase/firestore"
 import { Plus, LayoutGrid, Search, Video } from "lucide-react"
 import { VideoCreator } from "@/components/ad-builder/video-creator"
@@ -167,17 +168,46 @@ export default function AdBuilderPage() {
         ) : viewMode === "video" ? (
           <VideoCreator />
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-            {/* Sidebar Column: 5/12 */}
-            <aside className="xl:col-span-5 lg:sticky lg:top-24 space-y-6">
-              <Card className="border-border bg-card p-4 shadow-sm overflow-hidden">
-                <div className="mb-4">
-                  <h3 className="font-bold text-lg mb-1">{t("builder.available_formats")}</h3>
-                  <p className="text-xs text-muted-foreground">Select a creative style to start building.</p>
-                </div>
-                <div className="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex flex-col lg:flex-row gap-8 items-start relative">
+            {/* Sidebar Column - Dynamic Width with Peek Logic */}
+            <aside
+              className={cn(
+                "transition-all duration-500 ease-in-out lg:sticky lg:top-24 z-40 group/sidebar",
+                selectedAdType
+                  ? "w-full lg:w-12 opacity-30 hover:opacity-100 lg:hover:w-16"
+                  : "w-full lg:w-[400px]"
+              )}
+            >
+              <Card className={cn(
+                "border-border bg-card shadow-xl backdrop-blur-md bg-opacity-80 transition-all duration-500",
+                selectedAdType ? "p-1 rounded-xl overflow-visible" : "p-6 rounded-3xl overflow-hidden"
+              )}>
+                {!selectedAdType ? (
+                  <div className="mb-6 animate-in fade-in duration-500">
+                    <h3 className="font-bold text-xl mb-1 tracking-tight">{t("builder.available_formats")}</h3>
+                    <p className="text-xs text-muted-foreground opacity-70">Select a specialized format to start your campaign.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedAdType("")}
+                      className="w-8 h-8 mb-2 hover:bg-primary/10 text-primary transition-colors"
+                      title="Clear Selection"
+                    >
+                      <Plus className="h-4 w-4 rotate-45" />
+                    </Button>
+                    <div className="w-full h-px bg-border/20 mb-2" />
+                  </div>
+                )}
+
+                <div className={cn(
+                  "custom-scrollbar transition-all duration-500",
+                  selectedAdType ? "max-h-[80vh] py-2" : "max-h-[65vh] overflow-y-auto pr-2"
+                )}>
                   <AdTypeSelector
-                    variant="sidebar"
+                    variant={selectedAdType ? "compact" : "sidebar"}
                     options={adBuilderRegistry}
                     selectedId={selectedAdType}
                     onSelect={(id) => { setSelectedAdType(id); setInitialData(undefined); }}
@@ -186,26 +216,26 @@ export default function AdBuilderPage() {
               </Card>
             </aside>
 
-            {/* Main Column: 7/12 */}
-            <div className="xl:col-span-7 space-y-8">
+            {/* Main Column - Flexible Growth */}
+            <div className="flex-1 w-full space-y-8 min-w-0">
               {!selectedAdType ? (
-                <Card className="flex flex-col items-center justify-center p-20 text-center border-dashed border-2 bg-muted/20">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Plus className="h-6 w-6 text-primary" />
+                <Card className="flex flex-col items-center justify-center p-24 text-center border-dashed border-2 border-primary/20 bg-primary/5 rounded-3xl animate-in zoom-in-95 duration-500">
+                  <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 shadow-inner">
+                    <Plus className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{t("builder.select_format_prompt")}</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Choose one of the specialized ad formats from the left sidebar to begin your creative journey.
+                  <h3 className="text-2xl font-bold mb-3 tracking-tight">{t("builder.select_format_prompt")}</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    Choose one of our premium ad formats from the sidebar to begin your creative journey. Each format is optimized for high conversion and seamless distribution.
                   </p>
                 </Card>
               ) : BuilderComponent ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className="animate-in fade-in slide-in-from-right-4 duration-700">
                   <BuilderComponent key={`${selectedAdType}-${(initialData as any)?.id || "new"}`} initialData={initialData} />
                 </div>
               ) : (
-                <Card className="border-border bg-card p-12 text-center">
+                <Card className="border-border bg-card p-12 text-center rounded-3xl">
                   <h3 className="mb-2 text-2xl font-semibold">{t("builder.coming_soon")}</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground leading-relaxed">
                     {t("builder.coming_soon_desc")}
                   </p>
                 </Card>

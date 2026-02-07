@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AdRecord, UserProfile, getAllAds, getAllProfiles, deleteAdRecord } from "@/firebase/firestore"
-import { Loader2, Trash2, ExternalLink, TrendingUp, DollarSign } from "lucide-react"
+import { AdRecord, UserProfile, getAllAds, getAllProfiles, deleteAdRecord, getAllVideos, deleteVideoRecord, type VideoRecord } from "@/firebase/firestore"
+import { Loader2, Trash2, ExternalLink, TrendingUp, DollarSign, Video } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { AdPerformanceDialog } from "@/components/admin/ad-performance-dialog"
+import { AdManagementDialog } from "@/components/admin/ad-management-dialog"
 import { useLanguage } from "@/app/context/language-context"
 
 export default function AdminPage() {
@@ -24,6 +25,7 @@ export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [ads, setAds] = useState<(AdRecord & { id: string })[]>([])
     const [profiles, setProfiles] = useState<UserProfile[]>([])
+    const [videos, setVideos] = useState<(VideoRecord & { id: string })[]>([])
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -43,12 +45,14 @@ export default function AdminPage() {
 
     async function loadData() {
         setIsLoading(true)
-        const [adsData, profilesData] = await Promise.all([
+        const [adsData, profilesData, videosData] = await Promise.all([
             getAllAds(),
-            getAllProfiles()
+            getAllProfiles(),
+            getAllVideos()
         ])
         setAds(adsData)
         setProfiles(profilesData)
+        setVideos(videosData)
         setIsLoading(false)
     }
 
@@ -60,6 +64,17 @@ export default function AdminPage() {
             toast({ title: "Ad Deleted" })
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete ad", variant: "destructive" })
+        }
+    }
+
+    const handleDeleteVideo = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this video project? This cannot be undone.")) return
+        try {
+            await deleteVideoRecord(id)
+            setVideos(videos.filter(v => v.id !== id))
+            toast({ title: "Video Deleted" })
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to delete video", variant: "destructive" })
         }
     }
 
@@ -85,7 +100,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-950 text-white">
             <Navbar />
             <main className="container mx-auto py-10 px-4">
                 <div className="flex items-center justify-between mb-8">
@@ -106,29 +121,44 @@ export default function AdminPage() {
                 />
 
                 <Tabs defaultValue="ads" className="mt-8">
-                    <TabsList className="bg-white border">
-                        <TabsTrigger value="ads">{t("admin.tab.ads")} ({ads.length})</TabsTrigger>
-                        <TabsTrigger value="profiles">{t("admin.tab.profiles")} ({profiles.length})</TabsTrigger>
+                    <TabsList className="bg-white/5 border-white/10 p-1 h-12 shadow-2xl mb-6 backdrop-blur-xl">
+                        <TabsTrigger
+                            value="ads"
+                            className="px-8 flex items-center gap-2 text-white/60 data-[state=active]:bg-blue-600/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/50 border border-transparent transition-all"
+                        >
+                            <TrendingUp className="h-4 w-4" />
+                            Campaign Analytics ({ads.length})
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="videos"
+                            className="px-8 flex items-center gap-2 text-white/60 data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50 border border-transparent transition-all"
+                        >
+                            <Video className="h-4 w-4" />
+                            Video Creator Library ({videos.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="profiles" className="px-8 flex items-center gap-2 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white">
+                            {t("admin.tab.profiles")} ({profiles.length})
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="ads">
-                        <Card>
+                        <Card className="bg-slate-900/50 border-white/10 shadow-xl backdrop-blur-sm">
                             <CardHeader>
-                                <CardTitle>{t("admin.ads.title")}</CardTitle>
-                                <CardDescription>{t("admin.ads.desc")}</CardDescription>
+                                <CardTitle className="text-white">{t("admin.ads.title")}</CardTitle>
+                                <CardDescription className="text-white/60">{t("admin.ads.desc")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>{t("admin.table.campaign")}</TableHead>
-                                            <TableHead>{t("admin.table.type")}</TableHead>
-                                            <TableHead>{t("admin.table.user")}</TableHead>
-                                            <TableHead>{t("admin.table.status")}</TableHead>
-                                            <TableHead>{t("admin.table.impressions") || "Impresiones"}</TableHead>
-                                            <TableHead>{t("admin.table.clicks") || "Clicks"}</TableHead>
-                                            <TableHead>{t("admin.table.created")}</TableHead>
-                                            <TableHead className="text-right">{t("admin.table.actions")}</TableHead>
+                                    <TableHeader className="bg-white/5">
+                                        <TableRow className="border-white/10">
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">{t("admin.table.campaign")}</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">{t("admin.table.type")}</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">{t("admin.table.status")}</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">Reach</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">Engagement</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">CTR</TableHead>
+                                            <TableHead className="font-bold text-white uppercase tracking-wider text-[10px]">Created</TableHead>
+                                            <TableHead className="text-right font-bold text-white uppercase tracking-wider text-[10px]">{t("admin.table.actions")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -142,7 +172,8 @@ export default function AdminPage() {
                                                                 ad.type === "push-expandable" ? "Push Expandable" :
                                                                     ad.type === "side-rail" ? "Side Rail" :
                                                                         ad.type === "interscroller-ad" ? "Interscroller" :
-                                                                            ad.type || t("display")}
+                                                                            ad.type === "vertical-gallery" ? "Video Gallery" :
+                                                                                ad.type || t("display")}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell>{ad.userId}</TableCell>
@@ -155,26 +186,106 @@ export default function AdminPage() {
                                                                 t("status.draft")}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="font-mono text-xs">{ad.totalImpressions || 0}</TableCell>
-                                                <TableCell className="font-mono text-xs">{ad.totalClicks || 0}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Impressions</span>
+                                                        <span className="font-mono text-sm">{ad.totalImpressions || 0}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Clicks</span>
+                                                        <span className="font-mono text-sm">{ad.totalClicks || 0}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">CTR</span>
+                                                        <span className="font-mono text-sm">
+                                                            {ad.totalImpressions ? ((ad.totalClicks || 0) / ad.totalImpressions * 100).toFixed(2) : "0.00"}%
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell className="text-slate-500 text-sm">
                                                     {ad.createdAt?.toDate ? ad.createdAt.toDate().toLocaleDateString() : "Unknown"}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-2">
+                                                        {ad.type === 'push-expandable' ? (
+                                                            ad.zipUrl && (
+                                                                <Link href={ad.zipUrl} target="_blank">
+                                                                    <Button size="icon" variant="ghost" title="Download ZIP" className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 border border-indigo-500/20">
+                                                                        <ExternalLink className="h-4 w-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            )
+                                                        ) : (
+                                                            <AdManagementDialog ad={ad} />
+                                                        )}
+
                                                         <AdPerformanceDialog ad={ad} />
 
-                                                        {ad.zipUrl && (
-                                                            <Link href={ad.zipUrl} target="_blank">
-                                                                <Button size="icon" variant="ghost" title="Download ZIP">
-                                                                    <ExternalLink className="h-4 w-4" />
-                                                                </Button>
-                                                            </Link>
-                                                        )}
-                                                        <Button size="icon" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleDeleteAd(ad.id)}>
+                                                        <Button size="icon" variant="ghost" className="text-red-500 hover:bg-red-500/10 border border-red-500/10" onClick={() => handleDeleteAd(ad.id)}>
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="videos">
+                        <Card className="bg-slate-900/50 border-white/10 shadow-xl backdrop-blur-sm">
+                            <CardHeader className="border-b border-white/10 bg-emerald-500/10">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                                        <Video className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-white">Video Creator Library</CardTitle>
+                                        <CardDescription className="text-emerald-400/70">Reusable video projects saved from the Remotion toolkit.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Project Name</TableHead>
+                                            <TableHead>Headline</TableHead>
+                                            <TableHead>User</TableHead>
+                                            <TableHead>Format</TableHead>
+                                            <TableHead>Created</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {videos.map((video) => (
+                                            <TableRow key={video.id}>
+                                                <TableCell className="font-medium">{video.name}</TableCell>
+                                                <TableCell className="text-sm italic text-slate-600">"{video.settings.headline}"</TableCell>
+                                                <TableCell>{video.userId}</TableCell>
+                                                <TableCell>
+                                                    <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs">
+                                                        {video.settings.width}x{video.settings.height}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-slate-500 text-sm">
+                                                    {video.createdAt?.toDate ? video.createdAt.toDate().toLocaleDateString() : "Unknown"}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="text-red-500 hover:bg-red-50"
+                                                        onClick={() => handleDeleteVideo(video.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -234,31 +345,31 @@ export default function AdminPage() {
 function GenericStats({ adsCount, profilesCount, revenue, t }: { adsCount: number, profilesCount: number, revenue: number, t: (key: string) => string }) {
     return (
         <div className="grid gap-4 md:grid-cols-3">
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t("admin.total_revenue")}</CardTitle>
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <CardTitle className="text-sm font-medium text-white/70">{t("admin.total_revenue")}</CardTitle>
+                    <DollarSign className="h-4 w-4 text-green-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-green-600">${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                    <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                    <div className="text-2xl font-bold text-green-400">${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-xs text-white/40">+20.1% from last month</p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t("admin.total_ads")}</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-sm font-medium text-white/70">{t("admin.total_ads")}</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-blue-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{adsCount}</div>
+                    <div className="text-2xl font-bold text-white">{adsCount}</div>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-slate-900/50 border-white/10 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t("admin.active_kits")}</CardTitle>
+                    <CardTitle className="text-sm font-medium text-white/70">{t("admin.active_kits")}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{profilesCount}</div>
+                    <div className="text-2xl font-bold text-white">{profilesCount}</div>
                 </CardContent>
             </Card>
         </div>

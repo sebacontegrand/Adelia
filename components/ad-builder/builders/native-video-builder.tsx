@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
-import { Loader2, Upload, Save, Video, Copy, X } from "lucide-react"
+import { Loader2, Upload, Save, Video, Copy, X, Sparkles as SparklesIcon } from "lucide-react"
 
 import { uploadAdAsset } from "@/firebase/storage"
-import { type AdRecord, saveAdRecord } from "@/firebase/firestore"
-import { useMemo } from "react"
+import { type AdRecord, saveAdRecord, getUserVideos, type VideoRecord } from "@/firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,12 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { TRACKING_SCRIPT } from "@/components/ad-builder/tracking-script"
 import { SlotSelector } from "@/components/ad-builder/slot-selector"
 import { AdScriptResult } from "@/components/ad-builder/ad-script-result"
-import { getUserAds } from "@/firebase/firestore"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Sparkles as SparklesIcon } from "lucide-react"
 
 export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & { id?: string } }) {
     const { toast } = useToast()
@@ -47,7 +43,7 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
     const [embedScript, setEmbedScript] = useState("")
 
     // Project Selection
-    const [videoProjects, setVideoProjects] = useState<(AdRecord & { id: string })[]>([])
+    const [videoProjects, setVideoProjects] = useState<(VideoRecord & { id: string })[]>([])
     const [isFetchingProjects, setIsFetchingProjects] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -55,9 +51,8 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
         if (!session?.user?.email) return
         setIsFetchingProjects(true)
         try {
-            const ads = await getUserAds(session.user.email)
-            const remotionProjects = ads.filter(ad => ad.type === "remotion-video" || ad.type === "native-video")
-            setVideoProjects(remotionProjects)
+            const videos = await getUserVideos(session.user.email)
+            setVideoProjects(videos as any)
         } catch (err) {
             console.error("Error fetching projects:", err)
         } finally {
@@ -65,7 +60,7 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
         }
     }
 
-    const selectProject = (project: AdRecord & { id: string }) => {
+    const selectProject = (project: VideoRecord & { id: string }) => {
         setHeadline(project.settings.headline || "")
         setBody(project.settings.body || project.settings.subtext || "")
         setCtaText(project.settings.ctaText || "Learn More")
@@ -251,7 +246,7 @@ export function NativeVideoBuilder({ initialData }: { initialData?: AdRecord & {
                                                             className="w-full text-left p-3 rounded-lg border border-slate-100 hover:border-emerald-500/50 hover:bg-emerald-50/50 transition-all group"
                                                         >
                                                             <div className="flex items-center justify-between">
-                                                                <span className="font-semibold text-sm group-hover:text-emerald-600 transition-colors">{project.campaign}</span>
+                                                                <span className="font-semibold text-sm group-hover:text-emerald-600 transition-colors">{project.name}</span>
                                                                 <span className="text-[10px] text-slate-400">{project.createdAt?.toDate?.().toLocaleDateString()}</span>
                                                             </div>
                                                             <div className="text-[10px] text-slate-500 mt-1 truncate italic">

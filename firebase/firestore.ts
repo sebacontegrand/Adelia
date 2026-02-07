@@ -24,6 +24,14 @@ export type AdRecord = {
     events?: Record<string, number>;
 };
 
+export type VideoRecord = {
+    id?: string;
+    userId: string;
+    name: string;
+    settings: any;
+    createdAt?: any;
+};
+
 export async function saveAdRecord(adData: AdRecord, customId?: string) {
     try {
         if (customId) {
@@ -187,5 +195,73 @@ export async function getAllProfiles() {
     } catch (e) {
         console.error("Error fetching all profiles: ", e);
         return [];
+    }
+}
+
+// --- Video Library ---
+
+export async function saveVideoRecord(videoData: VideoRecord, customId?: string) {
+    try {
+        const data = {
+            ...videoData,
+            createdAt: serverTimestamp(),
+        };
+        if (customId) {
+            await setDoc(doc(db, "videos", customId), data);
+            return customId;
+        } else {
+            const docRef = await addDoc(collection(db, "videos"), data);
+            return docRef.id;
+        }
+    } catch (e) {
+        console.error("Error saving video: ", e);
+        throw e;
+    }
+}
+
+export async function getAllVideos() {
+    try {
+        const q = query(collection(db, "videos"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        })) as (VideoRecord & { id: string })[];
+    } catch (e) {
+        console.error("Error fetching all videos: ", e);
+        return [];
+    }
+}
+
+export async function getUserVideos(userId: string) {
+    try {
+        const q = query(
+            collection(db, "videos"),
+            where("userId", "==", userId)
+        );
+        const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        })) as (VideoRecord & { id: string })[];
+
+        return docs.sort((a, b) => {
+            const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return tB - tA;
+        });
+    } catch (e) {
+        console.error("Error fetching user videos: ", e);
+        return [];
+    }
+}
+
+export async function deleteVideoRecord(videoId: string) {
+    try {
+        await deleteDoc(doc(db, "videos", videoId));
+        return true;
+    } catch (e) {
+        console.error("Error deleting video: ", e);
+        throw e;
     }
 }

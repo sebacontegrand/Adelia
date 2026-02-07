@@ -16,6 +16,7 @@ import { SideRailBuilder } from "@/components/ad-builder/builders/side-rail-buil
 import { InterscrollerBuilder } from "@/components/ad-builder/builders/interscroller-builder"
 import { NativeVideoBuilder } from "@/components/ad-builder/builders/native-video-builder"
 import { MiniGameBuilder } from "@/components/ad-builder/builders/mini-game-builder"
+import { VerticalVideoGalleryBuilder } from "@/components/ad-builder/builders/video-gallery-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
@@ -179,5 +180,16 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     image: "/previews/gated-game-layout.png",
     Builder: MiniGameBuilder,
     helperText: "Sube 3 iconos para crear un juego de memoria. El script inyectado <strong>difuminara automaticamente</strong> todo el contenido que siga al anuncio hasta que se complete el juego.",
+  },
+  {
+    id: "vertical-gallery",
+    title: "Vertical Video Gallery",
+    description: "Crea un feed vertical estilo social con tus proyectos de video guardados.",
+    dimensions: "Portrait (9:16)",
+    status: "live",
+    category: "video",
+    image: "/previews/interstitial-layout.png",
+    Builder: VerticalVideoGalleryBuilder,
+    helperText: "Selecciona multiples videos de tu biblioteca y crea una experiencia de scroll vertical inmersiva.",
   },
 ]

@@ -7,17 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Video, Settings2, Download, Copy, Play, Terminal, Sparkles, Loader2, Info, Upload, X, MousePointer2, Image as ImageIcon } from "lucide-react"
+import { Video, Settings2, Download, Copy, Play, Terminal, Sparkles, Loader2, Info, Upload, X, MousePointer2, Image as ImageIcon, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRef } from "react"
 import { Slider } from "@/components/ui/slider"
 import { useSession } from "next-auth/react"
-import { saveAdRecord } from "@/firebase/firestore"
+import { saveVideoRecord, type VideoRecord } from "@/firebase/firestore"
 
 export function VideoCreator() {
     const { toast } = useToast()
     const { data: session } = useSession()
+    const [projectId, setProjectId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [campaign, setCampaign] = useState("") // Project Name
+    const [initialData, setInitialData] = useState<VideoRecord | null>(null)
 
     // Video Parameters
     const [headline, setHeadline] = useState("Summertime Special")
@@ -193,29 +196,29 @@ export function VideoCreator() {
     }
 
     const handleSave = async () => {
-        if (!session?.user?.email) {
-            toast({ title: "Authentication Required", description: "Please sign in to save your work.", variant: "destructive" })
+        if (!campaign || !session?.user?.email) {
+            toast({
+                title: "Missing Information",
+                description: "Please enter a Project Name and ensure you are logged in.",
+                variant: "destructive",
+            })
             return
         }
 
+        console.log("Saving project:", campaign, "User:", session?.user?.email)
         setIsSaving(true)
         try {
-            await saveAdRecord({
-                userId: session.user.email,
-                campaign: `Video_${headline.substring(0, 15)}`,
-                placement: "remotion-video",
-                type: "remotion-video",
-                assets: {
-                    background: bgImage,
-                    logo: logo
-                },
+            const videoData: VideoRecord = {
+                userId: session!.user!.email!,
+                name: campaign,
                 settings: {
                     headline,
                     subtext,
                     brandColor,
+                    bgImage,
+                    logo,
                     ctaText,
                     overlayOpacity,
-                    fps,
                     headlineStartFrame,
                     subtextStartFrame,
                     ctaStartFrame,
@@ -228,14 +231,30 @@ export function VideoCreator() {
                     showSafeZones,
                     showProgressBar,
                     logoPosition,
-                    ctaMarginBottom
-                },
-                status: "active"
+                    ctaMarginBottom,
+                    fps,
+                    durationInFrames,
+                    width,
+                    height
+                }
+            }
+
+            console.log("Video data prepared:", videoData)
+            const id = await saveVideoRecord(videoData, initialData?.id)
+            console.log("Save successful! ID:", id)
+
+            setProjectId(id)
+            toast({
+                title: "Project Saved to Library",
+                description: "Your video configuration is now in the Adelia Video Library.",
             })
-            toast({ title: "Saved to Dashboard", description: "Your video project has been persisted." })
         } catch (error) {
-            console.error("Save Error:", error)
-            toast({ title: "Save Failed", description: "There was an error saving your project.", variant: "destructive" })
+            console.error("CRITICAL: Failed to save video project", error)
+            toast({
+                title: "Error",
+                description: "No se pudo guardar el proyecto de video. Revisa la consola para más detalles.",
+                variant: "destructive",
+            })
         } finally {
             setIsSaving(false)
         }
@@ -353,70 +372,64 @@ export function VideoCreator() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Preset Format</Label>
-                                        <div className="h-10 border rounded-md flex items-center px-1 bg-muted/30">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 text-[10px] flex-1"
-                                                onClick={() => { setWidth(1920); setHeight(1080); }}
-                                            >
-                                                16:9
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 text-[10px] flex-1"
-                                                onClick={() => { setWidth(1080); setHeight(1920); }}
-                                            >
-                                                9:16
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 text-[10px] flex-1"
-                                                onClick={() => { setWidth(1080); setHeight(1080); }}
-                                            >
-                                                1:1
-                                            </Button>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-3 pt-2 border-t border-border">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Video Properties</Label>
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Format & Dimensions</Label>
+
+                            <div className="flex gap-1 mb-2">
+                                {[
+                                    { label: 'Landscape', w: 1920, h: 1080, icon: Video },
+                                    { label: 'Portrait', w: 1080, h: 1920, icon: Play },
+                                    { label: 'Square', w: 1080, h: 1080, icon: ImageIcon },
+                                ].map((p) => (
+                                    <Button
+                                        key={p.label}
+                                        variant={width === p.w && height === p.h ? 'default' : 'outline'}
+                                        size="sm"
+                                        className="h-7 flex-1 text-[10px] gap-1"
+                                        onClick={() => {
+                                            setWidth(p.w)
+                                            setHeight(p.h)
+                                        }}
+                                    >
+                                        <p.icon className="h-3 w-3" />
+                                        {p.label}
+                                    </Button>
+                                ))}
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px]">Width (px)</Label>
+                                    <Label className="text-[10px]">Width</Label>
                                     <Input
                                         type="number"
                                         min="1"
                                         value={width}
                                         onChange={(e) => setWidth(Math.max(1, Number(e.target.value)))}
-                                        className="h-8 text-xs"
+                                        className="h-8 text-[10px]"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px]">Height (px)</Label>
+                                    <Label className="text-[10px]">Height</Label>
                                     <Input
                                         type="number"
                                         min="1"
                                         value={height}
                                         onChange={(e) => setHeight(Math.max(1, Number(e.target.value)))}
-                                        className="h-8 text-xs"
+                                        className="h-8 text-[10px]"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px]">Duration (Frames)</Label>
+                                    <Label className="text-[10px]">Duration (f)</Label>
                                     <Input
                                         type="number"
                                         min="1"
                                         value={durationInFrames}
                                         onChange={(e) => setDurationInFrames(Math.max(1, Number(e.target.value)))}
-                                        className="h-8 text-xs"
+                                        className="h-8 text-[10px]"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -426,7 +439,7 @@ export function VideoCreator() {
                                         min="1"
                                         value={fps}
                                         onChange={(e) => setFps(Math.max(1, Number(e.target.value)))}
-                                        className="h-8 text-xs"
+                                        className="h-8 text-[10px]"
                                     />
                                 </div>
                             </div>
@@ -693,14 +706,26 @@ export function VideoCreator() {
                             </div>
                         </div>
 
-                        <Button
-                            className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-11 shadow-lg shadow-emerald-900/20"
-                            onClick={handleSave}
-                            disabled={isSaving}
-                        >
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                            {isSaving ? "Saving..." : "Save to Adelia DB"}
-                        </Button>
+                        <div className="space-y-4 pt-6 border-t border-border mt-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Library Settings</Label>
+                                <Input
+                                    placeholder="Project Name (e.g. Summer Promo 2026)"
+                                    value={campaign}
+                                    onChange={(e) => setCampaign(e.target.value)}
+                                    className="h-10 border-emerald-500/20 focus-visible:ring-emerald-500"
+                                />
+                            </div>
+
+                            <Button
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-11 shadow-lg shadow-emerald-900/20"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                {isSaving ? "Saving..." : "Save to Adelia Library"}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -714,43 +739,54 @@ export function VideoCreator() {
                             <h3 className="font-bold text-sm tracking-tight">Live Cinema Preview</h3>
                         </div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
-                            <Play className="h-3 w-3" /> 5 Seconds @ 30fps
+                            <Play className="h-3 w-3" /> Cinematic Preview
                         </div>
                     </div>
-                    <div className="aspect-video bg-black relative">
-                        <Player
-                            component={AdVideo as any}
-                            durationInFrames={durationInFrames}
-                            compositionWidth={width}
-                            compositionHeight={height}
-                            fps={fps}
+                    <div className="bg-black relative flex items-center justify-center p-4 h-[600px] overflow-hidden group">
+                        <div
                             style={{
-                                width: '100%',
+                                aspectRatio: `${width}/${height}`,
+                                height: '100%',
+                                maxHeight: '100%',
+                                width: 'auto',
+                                maxWidth: '100%'
                             }}
-                            controls
-                            inputProps={{
-                                headline,
-                                subtext,
-                                brandColor,
-                                bgImage,
-                                logo,
-                                ctaText,
-                                overlayOpacity,
-                                headlineStartFrame,
-                                subtextStartFrame,
-                                ctaStartFrame,
-                                fontFamily,
-                                bgBlur,
-                                bgGrayscale,
-                                gradientDirection,
-                                animationStyle,
-                                textAlignment,
-                                showSafeZones,
-                                showProgressBar,
-                                logoPosition,
-                                ctaMarginBottom
-                            }}
-                        />
+                            className="relative shadow-2xl ring-1 ring-white/10"
+                        >
+                            <Player
+                                component={AdVideo as any}
+                                durationInFrames={durationInFrames}
+                                compositionWidth={width}
+                                compositionHeight={height}
+                                fps={fps}
+                                style={{
+                                    width: '100%',
+                                }}
+                                controls
+                                inputProps={{
+                                    headline,
+                                    subtext,
+                                    brandColor,
+                                    bgImage,
+                                    logo,
+                                    ctaText,
+                                    overlayOpacity,
+                                    headlineStartFrame,
+                                    subtextStartFrame,
+                                    ctaStartFrame,
+                                    fontFamily,
+                                    bgBlur,
+                                    bgGrayscale,
+                                    gradientDirection,
+                                    animationStyle,
+                                    textAlignment,
+                                    showSafeZones,
+                                    showProgressBar,
+                                    logoPosition,
+                                    ctaMarginBottom
+                                }}
+                            />
+                        </div>
                     </div>
                 </Card>
 
