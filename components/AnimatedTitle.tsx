@@ -66,7 +66,7 @@ export const AnimatedTitle: React.FC = () => {
                     display: "flex",
                     flexWrap: "wrap",
                     gap: "24px",
-                    fontSize: "96px",
+                    fontSize: "120px",
                     fontWeight: 800,
                     lineHeight: 1.1,
                     maxWidth: "100%",
@@ -91,7 +91,7 @@ export const AnimatedTitle: React.FC = () => {
                         style={{
                             ...getHighlightAnimation(i),
                             display: "inline-block",
-                            fontSize: "96px",
+                            fontSize: "120px",
                             background: "linear-gradient(to right, #60a5fa, #34d399)",
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",

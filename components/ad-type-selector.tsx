@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { Check, Lock, Layout, Puzzle, Palette, Mic, ImageIcon, MousePointer2, Sun, Maximize, Monitor, Sidebar, Scroll, Video, Gamepad2, Layers } from "lucide-react"
+import { Check, Lock, Layout, Puzzle, Palette, Mic, ImageIcon, MousePointer2, Sun, Maximize, Monitor, Sidebar, Scroll, Video, Gamepad2, Layers, MessagesSquare } from "lucide-react"
 
 export type AdTypeOption = {
   id: string
@@ -33,6 +33,7 @@ const getIcon = (id: string) => {
     case 'native-video': return Video;
     case 'mini-game-gated': return Gamepad2;
     case 'vertical-gallery': return Layers;
+    case 'text-dialogue': return MessagesSquare;
     default: return Layout;
   }
 }

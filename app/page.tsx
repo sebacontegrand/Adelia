@@ -9,6 +9,7 @@ import { Navbar } from "@/components/navbar"
 import { useLanguage } from "@/app/context/language-context"
 import { Sparkles } from "lucide-react"
 import { RemotionHeroTitle } from "@/components/remotion-hero-title"
+import { Footer } from "@/components/footer"
 
 export default function HomePage() {
   const { data: session, status } = useSession()
@@ -68,11 +69,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navbar onSignOut={isAuthenticated ? handleSignOut : undefined} />
 
       {!isAuthenticated && (
-        <section id="login" className="relative flex items-center justify-center px-4 py-20">
+        <section id="login" className="relative flex items-center justify-center px-4 py-20 flex-1">
           <div className="absolute inset-0 z-0 opacity-20">
             <div className="grid h-full grid-cols-3 gap-2 p-4">
               <img src="/new-york-times-newspaper-front-page.jpg" alt="" className="h-full w-full object-cover" />
@@ -118,7 +119,7 @@ export default function HomePage() {
         </section>
       )}
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 py-6 flex-1">
         {/* Future Showcase Section */}
         <section className="mb-20 overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl">
           <div className="grid md:grid-cols-2 items-center">
@@ -176,6 +177,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   )
 }

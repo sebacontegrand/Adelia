@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Monitor, Smartphone, Video } from "lucide-react"
+import { MessagesSquare, Monitor, Smartphone, Video } from "lucide-react"
 import { adBuilderRegistry, FormatCategory } from "@/components/ad-builder/registry"
 import { useLanguage } from "@/app/context/language-context"
 
@@ -57,6 +57,15 @@ export default function FormatsPage() {
           >
             <Video className="h-5 w-5" />
             {t("formats.video")}
+          </Button>
+          <Button
+            size="lg"
+            variant={selectedFormat === "conversational" ? "default" : "outline"}
+            onClick={() => setSelectedFormat("conversational")}
+            className="gap-2"
+          >
+            <MessagesSquare className="h-5 w-5" />
+            {t("formats.conversational")}
           </Button>
           {/* Add Social logic if needed in future */}
         </div>

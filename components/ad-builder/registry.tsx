@@ -17,10 +17,11 @@ import { InterscrollerBuilder } from "@/components/ad-builder/builders/interscro
 import { NativeVideoBuilder } from "@/components/ad-builder/builders/native-video-builder"
 import { MiniGameBuilder } from "@/components/ad-builder/builders/mini-game-builder"
 import { VerticalVideoGalleryBuilder } from "@/components/ad-builder/builders/video-gallery-builder"
+import { TextDialogueBuilder } from "@/components/ad-builder/builders/text-dialogue-builder"
 
 import { type AdRecord } from "@/firebase/firestore"
 
-export type FormatCategory = "desktop" | "mobile" | "video" | "social"
+export type FormatCategory = "desktop" | "mobile" | "video" | "social" | "conversational"
 
 export type AdBuilderEntry = AdTypeOption & {
   Builder?: ComponentType<{ initialData?: AdRecord }>
@@ -191,5 +192,16 @@ export const adBuilderRegistry: AdBuilderEntry[] = [
     image: "/previews/interstitial-layout.png",
     Builder: VerticalVideoGalleryBuilder,
     helperText: "Selecciona multiples videos de tu biblioteca y crea una experiencia de scroll vertical inmersiva.",
+  },
+  {
+    id: "text-dialogue",
+    title: "AI Text-Dialogue",
+    description: "Genera conversaciones naturales con ElevenLabs en español latino.",
+    dimensions: "Native / Messaging",
+    status: "live",
+    category: "conversational",
+    image: "/previews/interstitial-layout.png",
+    Builder: TextDialogueBuilder,
+    helperText: "Escribi el dialogo y selecciona voces profesionales de <strong>ElevenLabs</strong>. Este formato genera una conversacion interactiva con audio de alta fidelidad y transcript dinámico.",
   },
 ]
